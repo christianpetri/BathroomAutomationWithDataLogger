@@ -26,7 +26,7 @@
 
 const int chipSelect = 4; 
 
-int delayLog =300000; //Delay log = 5 Minutes
+unsigned long delayLog =300000; //Delay log = 5 Minutes
 unsigned long lastTimeButtonPressed = 0; //When was the button last pressed (milliseconds from last reset) 
 unsigned long lastLogTime = 0; //Set last log time ""
 int active = 0; // is Button delay still active, (Butten pressed, button remains "active" for 10 Seconds)
@@ -107,9 +107,7 @@ int active = 0; // is Button delay still active, (Butten pressed, button remains
   int fanAuto=0; //The humidity senor is on Auto Mode
   int fanAutoRememberState=0;
 /*End Auto */
-/*Loop Start*/
- unsigned int  i=0;
-/*Loop End*/
+ 
 void setup() {  // put your setup code here, to run once:
   Serial.begin(9600); 
   dht.begin(); //init the Humidity / Temperature sensor
@@ -151,8 +149,8 @@ void loop() { // put your main code here, to run repeatedly:
     SDCard();
     if(timerRunning){ //Fan is on for "timerDelay" time
         if(timer()){ //when timer has finished. Turn off Fan  
-          digitalWrite(relaisFanPin,1); 
-          digitalWrite(relaisFan1Pin,0); 
+          digitalWrite(relaisFanPin,relaisFanState=1); 
+          digitalWrite(relaisFan1Pin,relaisFan1State=0); 
           digitalWrite(LEDFanPin, LEDFanState=0); 
           timerRunning = 0;
        }  
@@ -161,12 +159,7 @@ void loop() { // put your main code here, to run repeatedly:
    if (fanAuto && !timerRunning){ //The fan is in automatic mode. If humidity rises above a certain value turn on fan, else turn off fan
        sensor(); 
    }
-    
-   
-      //Serial.println(dht.readHumidity(),0);
-      i=0;  
-    //delay(10000);
-    
+  
    //readHumidityTemperature(); //Uncomment when you want to check if the temp and the humidity sensor is working
 }
 
@@ -179,6 +172,7 @@ void button(){
 
   //Fan On/Off /`**  Relais FAN and FAN 1 = ON for delayTimer amount, then FAN= Off and Fan1=On
   if (buttonFanState == HIGH && debounceReturn) {
+    lastDebounceTime = millis();
     //Serial.print("buttonFanPin pressed");
     if(LEDFan2State){ //if manual override is on: Turn off the LEDFan2, "turn" on (remember inverse below) LEDFan
       LEDFanState=0;
@@ -187,12 +181,11 @@ void button(){
     digitalWrite(LEDFan2Pin,LEDFan2State=0);
     digitalWrite(LEDFanPin, LEDFanState=!LEDFanState);
     digitalWrite(relaisFanPin,relaisFanState=!LEDFanState);  
-    digitalWrite(relaisFan1Pin,relaisFan1State=0);   
+    digitalWrite(relaisFan1Pin,relaisFan1State=0);    //make sure that old Fan controler has no control over Fan
 
      if(LEDFanState){
-           timerRunning = 1;
-           unsigned long currentMillis = millis();
-           lastTimerTime=currentMillis; 
+           timerRunning = 1; 
+           lastTimerTime=millis(); 
      }else{
         timerRunning=0;
      }
@@ -200,6 +193,7 @@ void button(){
 
    //Fan Auto On / Off ** if humididty is higher that x turn on fan 
    if (buttonFan1State == HIGH && debounceReturn) {
+     lastDebounceTime = millis();
      //Serial.println("buttonFan1Pin pressed");
     
      if(LEDFan2State){ //if manual override is on: Turn off the LEDFan2, "turn" on (remember inverse below) LEDFan1
@@ -208,7 +202,7 @@ void button(){
      }
      
      digitalWrite(LEDFan1Pin, LEDFan1State=!LEDFan1State); 
-     digitalWrite(relaisFan1Pin, relaisFan1State=0);
+     digitalWrite(relaisFan1Pin, relaisFan1State=0); //make sure that old Fan controler has no control over Fan
      fanAuto=LEDFan1State; 
      fanAutoRememberState=LEDFan1State;
      
@@ -219,6 +213,7 @@ void button(){
 
    //Fan manual override
    if (buttonFan2State == HIGH && debounceReturn) {
+     lastDebounceTime = millis();
      //Serial.println("buttonFan2Pin pressed");
      timerRunning=0;
      fanAuto=0;
@@ -245,6 +240,7 @@ void button(){
 
    //Button for the light in the room
    if (buttonLampState == HIGH && debounceReturn) {
+      lastDebounceTime = millis();
      //Serial.println("buttonLight pressed");
      digitalWrite(LEDLampPin, LEDLampState=!LEDLampState);
      digitalWrite(relaisLampPin,relaisLampState=LEDLampState);  
@@ -255,9 +251,7 @@ void button(){
 int debounce(){
     
 
-  if (millis() - lastDebounceTime >= debounceDelay ) {
-    // save the last time  
-    lastDebounceTime = millis();
+  if (millis() - lastDebounceTime >= debounceDelay ) { 
     return 1;
   } else {
     return 0;  
@@ -303,10 +297,10 @@ void readHumidityTemperature(){
     // Read humitidy 
    float humidity = dht.readHumidity(); 
    if (humidity >  50) {
-         digitalWrite(relaisFanPin,0);
+         digitalWrite(relaisFanPin,relaisFanState=0);
     } 
     if (humidity <  45) {
-       digitalWrite(relaisFanPin,1);
+       digitalWrite(relaisFanPin,relaisFanState=1);
     } 
  }
  
@@ -356,7 +350,7 @@ int getButtonState(){
 
 void SDCard(){
      
-    if(((millis()-lastTimeButtonPressed) > 10000) && active){ //=10 Seconds
+    if(active && ((millis()-lastTimeButtonPressed) > 10000)){ //=10 Seconds
       delayLog=300000; //=5 Minutes
       active=0;  
       Serial.print(delayLog);
@@ -364,8 +358,9 @@ void SDCard(){
     }
 
 
-    Serial.print(millis());
-    Serial.println(lastLogTime);
+    //Serial.print(millis());
+    //Serial.println(lastLogTime);
+    
     if((millis()-lastLogTime) > delayLog)
     {
         lastLogTime=millis(); 
