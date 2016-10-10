@@ -1,3 +1,41 @@
+/*Start SD Card*/
+/*
+  SD card datalogger
+
+ This example shows how to log data from three analog sensors
+ to an SD card using the SD library.
+
+ The circuit:
+ * analog sensors on analog ins 0, 1, and 2
+ * SD card attached to SPI bus as follows:
+ ** MOSI - pin 11
+ ** MISO - pin 12
+ ** CLK - pin 13
+ ** CS - pin 4
+
+ created  24 Nov 2010
+ modified 9 Apr 2012
+ by Tom Igoe
+
+ This example code is in the public domain.
+
+ */
+
+#include <SPI.h>
+#include <SD.h>
+
+const int chipSelect = 4; 
+
+int delayLog =300000; //Delay log = 5 Minutes
+unsigned long lastTimeButtonPressed = 0; //When was the button last pressed (milliseconds from last reset) 
+unsigned long lastLogTime = 0; //Set last log time ""
+int active = 0; // is Button delay still active, (Butten pressed, button remains "active" for 10 Seconds)
+/*End  SD Card*/
+/*Start Timer*/
+  const long timerDelay = 3600000; // for how long the timer will run in MilliSeconds (3600000 ms = 1 Hour)
+  unsigned long lastTimerTime = 0;   // will store last timer time
+  int timerRunning = 0;  //check whether the  timer is running
+/*End Timer*/
  /*START Humidity / Temperature*/
           // Example testing sketch for various DHT humidity/temperature sensors
           // Written by ladyada, public domain
@@ -52,7 +90,7 @@
   int LEDFan1State = 0; //state of LED Fan1
 
   int LEDFan2Pin = A3; //define on what pin the LED Fan1 is
-  int LEDFan2State = 0; //state of LED Fan1
+  int LEDFan2State = 1; //state of LED Fan2
 
   int LEDLampPin = A4; //define on what pin the LED Light  is
   int LEDLampState = 0; //state of LED Light 
@@ -64,12 +102,7 @@
   // constants won't change :
   const long debounceDelay = 150;           // interval of debounce (milliseconds)="delay"
   int debounceReturn=0;
-/*End debounce Button*/
-/*Start Timer*/
-  const long timerDelay = 3600000; // for how long the timer will run in MilliSeconds (3600000 ms = 1 Hour)
-  unsigned long lastTimerTime = 0;   // will store last timer time
-  int timerRunning = 0;  //check whether the  timer is running
-/*End Timer*/
+/*End debounce Button*/ 
 /*Start Auto */
   int fanAuto=0; //The humidity senor is on Auto Mode
   int fanAutoRememberState=0;
@@ -98,17 +131,24 @@ void setup() {  // put your setup code here, to run once:
   pinMode(LEDFanPin, OUTPUT);
   pinMode(LEDFan1Pin, OUTPUT);
   pinMode(LEDFan2Pin, OUTPUT);
-     digitalWrite(LEDFan2Pin,HIGH);
+     digitalWrite(LEDFan2Pin,LEDFan2State);
   pinMode(LEDLampPin, OUTPUT);
 
-  //Print humiditiy to the console
-  //Serial.println(dht.readHumidity(),0);
+  //SD Card
+   // Serial.print("Initializing SD card...");
+
+  // see if the card is present and can be initialized:
+  if (!SD.begin(chipSelect)) {
+    Serial.println("Card failed, or not present");
+  }else{
+    //Serial.println(" card initialized."); 
+  }  
 } 
 
 void loop() { // put your main code here, to run repeatedly:
-   
+    unsigned long currentMillis = millis();
     button(); //check if buttons are pressed
-   
+    SDCard();
     if(timerRunning){ //Fan is on for "timerDelay" time
         if(timer()){ //when timer has finished. Turn off Fan  
           digitalWrite(relaisFanPin,1); 
@@ -168,12 +208,12 @@ void button(){
      }
      
      digitalWrite(LEDFan1Pin, LEDFan1State=!LEDFan1State); 
-     digitalWrite(relaisFan1Pin, 0);
+     digitalWrite(relaisFan1Pin, relaisFan1State=0);
      fanAuto=LEDFan1State; 
      fanAutoRememberState=LEDFan1State;
      
      if(!fanAuto && !timerRunning){
-      digitalWrite(relaisFanPin, 1);
+      digitalWrite(relaisFanPin,relaisFanState=1);
      }
    }
 
@@ -190,15 +230,15 @@ void button(){
      digitalWrite(LEDFan2Pin, LEDFan2State=!LEDFan2State);
      
      if(LEDFan2State){
-       digitalWrite(relaisFanPin, 1);
-       digitalWrite(relaisFan1Pin, 1); 
+       digitalWrite(relaisFanPin, relaisFanState=1);
+       digitalWrite(relaisFan1Pin, relaisFan1State=1); 
      }else{
-       digitalWrite(relaisFanPin, 1);
-       digitalWrite(relaisFan1Pin, 0); 
+       digitalWrite(relaisFanPin, relaisFanState=1);
+       digitalWrite(relaisFan1Pin, relaisFan1State=0); 
      }
      
      if(fanAutoRememberState && !LEDFan2State){
-      digitalWrite(LEDFan1Pin, 1); 
+      digitalWrite(LEDFan1Pin, LEDFan1State=1); 
       fanAuto=1; 
      }
    }
@@ -207,17 +247,17 @@ void button(){
    if (buttonLampState == HIGH && debounceReturn) {
      //Serial.println("buttonLight pressed");
      digitalWrite(LEDLampPin, LEDLampState=!LEDLampState);
-     digitalWrite(relaisLampPin,LEDLampState);  
+     digitalWrite(relaisLampPin,relaisLampState=LEDLampState);  
   }  
  }
  
 
 int debounce(){
-   unsigned long currentMillis = millis();
+    
 
-  if (currentMillis - lastDebounceTime >= debounceDelay ) {
+  if (millis() - lastDebounceTime >= debounceDelay ) {
     // save the last time  
-    lastDebounceTime = currentMillis;
+    lastDebounceTime = millis();
     return 1;
   } else {
     return 0;  
@@ -286,25 +326,86 @@ int getButtonState(){
   //Serial.println (value);
   if(value<=1024  &&  value >=1013){
      buttonLampState=HIGH;
+     buttonPressed();
   } else {
      buttonLampState=LOW;
   }
   
    if(value <= 521 && value >= 501){
      buttonFan2State=HIGH;
+     buttonPressed();
   } else {
-     buttonFan2State=LOW;
+     buttonFan2State=LOW; 
   }
   
    if(value <= 350  && value >= 330){
      buttonFan1State=HIGH;
+     buttonPressed();
   } else {
      buttonFan1State=LOW;
   }
   
    if(value >= 240 && value <= 260){
      buttonFanState=HIGH;
+     buttonPressed();
   } else {
      buttonFanState=LOW;
   }  
+}
+
+
+void SDCard(){
+     
+    if(((millis()-lastTimeButtonPressed) > 10000) && active){ //=10 Seconds
+      delayLog=300000; //=5 Minutes
+      active=0;  
+      Serial.print(delayLog);
+      Serial.println(" active=0");
+    }
+
+
+    Serial.print(millis());
+    Serial.println(lastLogTime);
+    if((millis()-lastLogTime) > delayLog)
+    {
+        lastLogTime=millis(); 
+        // make a string for assembling the data to log:
+        String dataString = ""; 
+           
+        dataString +=LEDFanState;
+        dataString += ",";
+        dataString +=LEDFan1State;
+        dataString += ",";
+        dataString +=LEDFan2State;
+        dataString += ",";
+        dataString +=LEDLampState;
+        dataString += ",";  
+        dataString +=!relaisFanState;
+               
+        // open the file. note that only one file can be open at a time,
+        // so you have to close this one before opening another.
+        File dataFile = SD.open("datalog.txt", FILE_WRITE);
+      
+        // if the file is available, write to it:
+        if (dataFile) {
+          dataFile.println(dataString);
+          dataFile.close();
+          // print to the serial port too:
+          Serial.println(dataString);
+        }
+        // if the file isn't open, pop up an error:
+        else {
+          Serial.println("No SD Card present");
+        } 
+    } 
+  
+}
+
+void buttonPressed(){
+  
+  delayLog=1000; //=1 Second
+  lastTimeButtonPressed=millis();
+  active=1; 
+   Serial.println(" active=1");
+       
 }
