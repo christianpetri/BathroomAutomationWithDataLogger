@@ -1,34 +1,24 @@
 /*Start SD Card*/
-/*
-  SD card datalogger
-
- This example shows how to log data from three analog sensors
- to an SD card using the SD library.
-
- The circuit:
- * analog sensors on analog ins 0, 1, and 2
- * SD card attached to SPI bus as follows:
- ** MOSI - pin 11
- ** MISO - pin 12
- ** CLK - pin 13
- ** CS - pin 4
-
- created  24 Nov 2010
- modified 9 Apr 2012
- by Tom Igoe
-
- This example code is in the public domain.
-
- */
+    /*SD card datalogger 
+    * SD card attached to SPI bus as follows:
+    ** MOSI - pin 11
+    ** MISO - pin 12
+    ** CLK - pin 13
+    ** CS - pin 4
+    created  24 Nov 2010 modified 9 Apr 2012 by Tom Igoe
+    This example code is in the public domain.
+    */
 
 #include <SPI.h>
 #include <SD.h>
 
-const int chipSelect = 4; 
+const int chipSelect = 4;  //The SD card uses Pin 4!
 
-unsigned long delayLog =300000; //Delay log = 5 Minutes
+unsigned long delayLogCrude =300000; //Delay Log  Crude     300000ms    = 5     Minutes
+unsigned long delayLogPrecise =30000; //Delay Log Presice   30000ms     = 30    Seconds
 unsigned long lastTimeButtonPressed = 0; //When was the button last pressed (milliseconds from last reset) 
-unsigned long lastLogTime = 0; //Set last log time ""
+unsigned long lastLogTimeCrude = 0; //Set last log time ""
+unsigned long lastLogTimePrecise = 0; //Set last log time "" delayLogPresice
 int active = 0; // is Button delay still active, (Butten pressed, button remains "active" for 10 Seconds)
 /*End  SD Card*/
 /*Start Timer*/
@@ -37,12 +27,10 @@ int active = 0; // is Button delay still active, (Butten pressed, button remains
   int timerRunning = 0;  //check whether the  timer is running
 /*End Timer*/
  /*START Humidity / Temperature*/
-          // Example testing sketch for various DHT humidity/temperature sensors
-          // Written by ladyada, public domain
+        // Example testing sketch for various DHT humidity/temperature sensors // Written by ladyada, public domain
           
-          #include "DHT.h"
-  
-  #define DHTPIN 2     // what digital pin we're connected to
+    #include "DHT.h" 
+    #define DHTPIN 2     // what digital pin we're connected to = Pin 2
   
     // Uncomment whatever type you're using!
     #define DHTTYPE DHT11   // DHT 11
@@ -70,12 +58,53 @@ int active = 0; // is Button delay still active, (Butten pressed, button remains
   int relayFan1Pin = 6; //define on what pin the fan1 relay is
   int relayFan1State = 1; //state of the fan1 relay 
    
-  int relayLampPin = 7; //define on what pin the light relay is
-  int relayLampState = 0; //state of the Light relay 
+  int relayLightPin = 7; //define on what pin the light relay is
+  int relayLightState = 0; //state of the Light relay 
 
   int state=0; //add reverse boolean function: For relay FAN LOW=On, for relay Lamp HIGH=On
 /*End Relay*/
-/*Start Buttos*/
+/*Start Fan Auto */
+  int fanAuto=0; //Check if Fan Auto Mode is on or off (on= 1=true , off= 0=false)
+  int fanAutoRememberState=0;
+  int autoActive=0;
+/*End Fan Auto */
+/*Start Motion Detection*/
+int motionDetectionPin=8; 
+int motionDetectionState=0;
+unsigned long motionDetectionTimer=300000; //Timer before Light is turned off 300000ms = 5 Minutes
+unsigned long lastMotionDetectedTime = 0;
+/*End Motion Detection*/
+/*Start 2 Way Light Switch*/ 
+int lightSensorPin=9;
+int lightSensorState=0; 
+/*ENd 2 Way Light Switch*/
+void turnLightOn(){ 
+	 if(!digitalRead(lightSensorPin)) { 
+		//if the Light is off, find out what the current Light-Realy state is (0 or 1)
+		//and turn the light on 
+		digitalWrite(relayLightPin , relayLightState=!digitalRead(relayLightPin));
+	 } 	 
+}
+void turnLightOff(){
+	 if(digitalRead(lightSensorPin)) { 
+		//if the Light is on, find out what the current Light Realy state is (0 or 1)
+		//and turn the light off 
+		digitalWrite(relayLightPin , relayLightState=!digitalRead(relayLightPin));
+	 } 	
+}
+
+void motionDetection(){ 
+	if(digitalRead(motionDetectionPin)) {
+		turnLightOn();
+	 	lastMotionDetectedTime=millis(); 
+	}
+	
+	 if(millis()-lastMotionDetectedTime > motionDetectionTimer){
+	 	turnLightOff();
+	 } 	
+}
+
+/*Start Buttons*/
   int buttonsPin = A0; //All the button run through ANALOG 0 
   int buttonFanState  = 0; //state of the Fan Button 
   int buttonFan1State = 0; //state of the Fan1 Button 
@@ -93,7 +122,7 @@ int active = 0; // is Button delay still active, (Butten pressed, button remains
   int LEDFan2State = 1; //state of LED Fan2
 
   int LEDLampPin = A4; //define on what pin the LED Light  is
-  int LEDLampState = 0; //state of LED Light 
+  int LEDLightState = 0; //state of LED Light 
 /*End LED*/
 /*Start debounce Button*/
   // Generally, you should use "unsigned long" for variables that hold time
@@ -103,11 +132,7 @@ int active = 0; // is Button delay still active, (Butten pressed, button remains
   const long debounceDelay = 200;           // interval of debounce (milliseconds)="delay"
   int debounceReturn=0;
 /*End debounce Button*/ 
-/*Start Auto */
-  int fanAuto=0; //The humidity senor is on Auto Mode
-  int fanAutoRememberState=0;
-/*End Auto */
- 
+
 void setup() {  // put your setup code here, to run once:
   Serial.begin(9600); 
   dht.begin(); //init the Humidity / Temperature sensor
@@ -119,11 +144,10 @@ void setup() {  // put your setup code here, to run once:
   pinMode(relayFan1Pin, OUTPUT);
   digitalWrite(relayFan1Pin, HIGH); //Turn Fan1 relay OFF
   
-  pinMode(relayLampPin, OUTPUT);
-
-
+  pinMode(relayLightPin, OUTPUT);
+ 
   //buttons
-    pinMode(buttonsPin, INPUT);
+  pinMode(buttonsPin, INPUT);
  
   //LEDs
   pinMode(LEDFanPin, OUTPUT);
@@ -133,8 +157,7 @@ void setup() {  // put your setup code here, to run once:
   pinMode(LEDLampPin, OUTPUT);
 
   //SD Card
-   // Serial.print("Initializing SD card...");
-
+  // Serial.print("Initializing SD card...");
   // see if the card is present and can be initialized:
   if (!SD.begin(chipSelect)) {
     Serial.println("Card failed, or not present");
@@ -146,13 +169,14 @@ void setup() {  // put your setup code here, to run once:
 void loop() { // put your main code here, to run repeatedly:
     unsigned long currentMillis = millis();
     button(); //check if buttons are pressed
-    SDCard();
+    SDCard(); //write log data
     if(timerRunning){ //Fan is on for "timerDelay" time
         if(timer()){ //when timer has finished. Turn off Fan  
           digitalWrite(relayFanPin,relayFanState=1); 
           digitalWrite(relayFan1Pin,relayFan1State=0); 
           digitalWrite(LEDFanPin, LEDFanState=0); 
           timerRunning = 0;
+			 autoActive=1;
        }  
     } 
      
@@ -164,10 +188,8 @@ void loop() { // put your main code here, to run repeatedly:
 }
 
 void button(){
-  // read the state of the pushbutton value (HIGH=pushed down,LOW=not pushed down):
-  
-   getButtonState();
-
+  // read the state of the Push Buttons    
+   getButtonState(); 
    debounceReturn=debounce();
 
   //Fan On/Off /`**  relay FAN and FAN 1 = ON for delayTimer amount, then FAN= Off and Fan1=On
@@ -178,16 +200,16 @@ void button(){
       LEDFanState=0;
       digitalWrite(LEDFan2Pin,LEDFan2State=0);
     }
-    digitalWrite(LEDFan2Pin,LEDFan2State=0);
-    digitalWrite(LEDFanPin, LEDFanState=!LEDFanState);
-    digitalWrite(relayFanPin,relayFanState=!LEDFanState);  
+    digitalWrite(LEDFan2Pin,LEDFan2State=0); //turn off LEDFan 2
+    digitalWrite(LEDFanPin, LEDFanState=!LEDFanState); //turn on/off LEDFan on=1 off=0
+    digitalWrite(relayFanPin,relayFanState=!LEDFanState);  //turn on Fan on=0 off=1 
     digitalWrite(relayFan1Pin,relayFan1State=0);    //make sure that old Fan controler has no control over Fan
 
-     if(LEDFanState){
+     if(LEDFanState){ //if LEDFan is on start the timer to turn off the light
            timerRunning = 1; 
            lastTimerTime=millis(); 
      }else{
-        timerRunning=0;
+        timerRunning=0; //if LEDFan is off "cancel" the timer, so the 
      }
   }
 
@@ -215,10 +237,10 @@ void button(){
    if (buttonFan2State == HIGH && debounceReturn) {
      lastDebounceTime = millis();
      //Serial.println("buttonFan2Pin pressed");
-     timerRunning=0;
-     fanAuto=0;
-     if(LEDFan1State || LEDFanState){
-      LEDFan2State=0;
+     timerRunning=0; //cancel Light Off timer
+     fanAuto=0; //turn off Fan Auto
+     if(LEDFan1State || LEDFanState){ //if LEDFan1 or LEDFan is on make sure that LEDFan2 is on
+      LEDFan2State=0; //inverse below =!0 =1
      }
      digitalWrite(LEDFanPin, LEDFanState=0);
      digitalWrite(LEDFan1Pin, LEDFan1State=0);
@@ -232,7 +254,7 @@ void button(){
        digitalWrite(relayFan1Pin, relayFan1State=0); 
      }
      
-     if(fanAutoRememberState && !LEDFan2State){
+     if(fanAutoRememberState && !LEDFan2State){ //if (Fan Auto was on and LEDFan2 is off){Turn Fan Auto on again}
       digitalWrite(LEDFan1Pin, LEDFan1State=1); 
       fanAuto=1; 
      }
@@ -242,8 +264,8 @@ void button(){
    if (buttonLampState == HIGH && debounceReturn) {
       lastDebounceTime = millis();
      //Serial.println("buttonLight pressed");
-     digitalWrite(LEDLampPin, LEDLampState=!LEDLampState);
-     digitalWrite(relayLampPin,relayLampState=LEDLampState);  
+     digitalWrite(LEDLampPin, LEDLightState=!LEDLightState);
+     digitalWrite(relayLightPin,relayLightState=LEDLightState);  
   }  
  }
  
@@ -293,7 +315,7 @@ void readHumidityTemperature(){
 
  void sensor(){ 
     // Read humitidy 
-   float humidity = dht.readHumidity(); 
+   int humidity = dht.readHumidity(); 
    if (humidity >  50) {
          digitalWrite(relayFanPin,relayFanState=0);
     } 
@@ -303,8 +325,7 @@ void readHumidityTemperature(){
  }
  
 int timer(){
-  unsigned long currentMillis = millis();
-
+  unsigned long currentMillis = millis(); 
   if(currentMillis-lastTimerTime >= timerDelay){ 
     return 1;
   } else {
@@ -314,7 +335,8 @@ int timer(){
 
 
 int getButtonState(){
- int value= analogRead(A0);
+   //Read the Analog value from the resistor ladder and determine what button was pushed
+  int value= analogRead(A0);
   //Serial.println (value);
   if(value<=1024  &&  value >=1013){
      buttonLampState=HIGH;
@@ -351,49 +373,97 @@ void buttonPressed(){
 }
 
 void SDCard(){
+	 //make Log entry after button is pressed
     if(active && ((millis()-lastTimeButtonPressed) > 150)){ //=0.15 Seconds 
-      makeLogEntries();
-      makeLogEntries();  
+      makeLogEntriesPrecise();
+      makeLogEntriesPrecise();  
       active=0;
     } 
-    
-    if((millis()-lastLogTime) > delayLog) {
-        lastLogTime=millis(); 
-        makeLogEntries();
+	 //make log entry when the FAN Auto state changes && Light Auto State changes
+	 if(autoActive && ((false)||(false))){
+	   makeLogEntriesPrecise();
+      makeLogEntriesPrecise();
+	 	autoActive=0;
+	 }
+	 //make a Precise Log entry
+    if(millis()-lastLogTimePrecise > delayLogPrecise){  
+       lastLogTimePrecise=millis();
+		 makeLogEntriesPrecise();
     } 
-  
+    //make a Crude Log entry
+    if((millis()-lastLogTimeCrude) > delayLogCrude) {
+        lastLogTimeCrude=millis(); 
+        makeLogEntriesCrude();
+    } 
+    
+} 
+
+void makeLogEntriesCrude(){ 
+    // make a string for assembling the data to log:
+    String dataString = "";    
+    dataString +=LEDFanState;
+    dataString += ",";
+    dataString +=LEDFan1State;
+    dataString += ",";
+    dataString +=LEDFan2State;
+    dataString += ",";
+    dataString +=LEDLightState;
+    dataString += ",";  
+    dataString +=!relayFanState; //When the relay is 0=LOW, Fan it is on. for the log 1 mean on, so I have to get the inverse
+	 
+	 int humidity = dht.readHumidity();
+	 dataString += ",";  
+	 dataString +=humidity;
+	 
+	 int temperature=dht.readTemperature();
+	 dataString += ",";  
+	 dataString +=temperature;
+    // open the file. note that only one file can be open at a time,
+    // so you have to close this one before opening another.
+    File dataFile = SD.open("datalog5MinutesCrude.txt", FILE_WRITE);
+    // if the file is available, write to it:
+    if (dataFile) {
+      dataFile.println(dataString);
+      dataFile.close();
+      // print to the serial port too:
+      //Serial.println(dataString);
+    } else { // if the file isn't open, pop up an error:
+      Serial.println("No SD Card present");
+    }   
 }
 
-
-
-void makeLogEntries(){
-          // make a string for assembling the data to log:
-        String dataString = ""; 
-           
-        dataString +=LEDFanState;
-        dataString += ",";
-        dataString +=LEDFan1State;
-        dataString += ",";
-        dataString +=LEDFan2State;
-        dataString += ",";
-        dataString +=LEDLampState;
-        dataString += ",";  
-        dataString +=!relayFanState;
-               
-        // open the file. note that only one file can be open at a time,
-        // so you have to close this one before opening another.
-        File dataFile = SD.open("datalog.txt", FILE_WRITE);
-      
-        // if the file is available, write to it:
-        if (dataFile) {
-          dataFile.println(dataString);
-          dataFile.close();
-          // print to the serial port too:
-          Serial.println(dataString);
-        }
-        
-        // if the file isn't open, pop up an error:
-        else {
-          Serial.println("No SD Card present");
-        }   
+void makeLogEntriesPrecise(){ 
+	 // make a string for assembling the data to log:
+    String dataString = "";    
+    dataString +=LEDFanState;
+    dataString += ",";
+    dataString +=LEDFan1State;
+    dataString += ",";
+    dataString +=LEDFan2State;
+    dataString += ",";
+    dataString +=LEDLightState;
+    dataString += ",";  
+    dataString +=!relayFanState; //When the relay is 0=LOW, Fan it is on. for the log 1 mean on, so I have to get the inverse
+	 
+	 int humidity = dht.readHumidity();
+	 dataString += ",";  
+	 dataString +=humidity;
+	 
+	 int temperature=dht.readTemperature();
+	 dataString += ",";  
+	 dataString +=temperature;
+	 // open the file. note that only one file can be open at a time,
+	 // so you have to close this one before opening another.
+	 File dataFile = SD.open("datalog30SecondsAndStateChanges.txt", FILE_WRITE);
+	 // if the file is available, write to it:
+    if (dataFile) {
+      dataFile.println(dataString);
+      dataFile.close();
+      // print to the serial port too:
+      //Serial.println(dataString);
+    } else { // if the file isn't open, pop up an error:
+      Serial.println("No SD Card present");
+    } 
 }
+
+ 
