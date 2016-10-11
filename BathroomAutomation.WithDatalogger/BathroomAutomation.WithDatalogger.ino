@@ -100,7 +100,7 @@ int active = 0; // is Button delay still active, (Butten pressed, button remains
   // The value will quickly become too large for an int to store
   unsigned long lastDebounceTime = 0;        // will store last time 
   // constants won't change :
-  const long debounceDelay = 150;           // interval of debounce (milliseconds)="delay"
+  const long debounceDelay = 200;           // interval of debounce (milliseconds)="delay"
   int debounceReturn=0;
 /*End debounce Button*/ 
 /*Start Auto */
@@ -247,16 +247,14 @@ void button(){
   }  
  }
  
-
 int debounce(){
-    
-
   if (millis() - lastDebounceTime >= debounceDelay ) { 
     return 1;
   } else {
     return 0;  
   }  
 }
+
 void readHumidityTemperature(){
    
   // Reading temperature or humidity takes about 250 milliseconds!
@@ -291,7 +289,7 @@ void readHumidityTemperature(){
   Serial.print(" *C ");
   Serial.print(hif);
   Serial.println(" *F"); 
- }
+}
 
  void sensor(){ 
     // Read humitidy 
