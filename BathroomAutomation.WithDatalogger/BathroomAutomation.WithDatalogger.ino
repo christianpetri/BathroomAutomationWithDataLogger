@@ -63,18 +63,18 @@ int active = 0; // is Button delay still active, (Butten pressed, button remains
   DHT dht(DHTPIN, DHTTYPE);
 /*END Humidity / Temperature*/
 
-/*Start Relais*/
-  int relaisFanPin = 5; //define on what pin the fan relais is
-  int relaisFanState = HIGH; //state of the fan relais 
+/*Start Relay*/
+  int relayFanPin = 5; //define on what pin the fan relay is
+  int relayFanState = HIGH; //state of the fan relay 
   
-  int relaisFan1Pin = 6; //define on what pin the fan1 relais is
-  int relaisFan1State = 1; //state of the fan1 relais 
+  int relayFan1Pin = 6; //define on what pin the fan1 relay is
+  int relayFan1State = 1; //state of the fan1 relay 
    
-  int relaisLampPin = 7; //define on what pin the light relais is
-  int relaisLampState = 0; //state of the Light relais 
+  int relayLampPin = 7; //define on what pin the light relay is
+  int relayLampState = 0; //state of the Light relay 
 
-  int state=0; //add reverse boolean function: For Relais FAN LOW=On, for Relais Lamp HIGH=On
-/*End Relais*/
+  int state=0; //add reverse boolean function: For relay FAN LOW=On, for relay Lamp HIGH=On
+/*End Relay*/
 /*Start Buttos*/
   int buttonsPin = A0; //All the button run through ANALOG 0 
   int buttonFanState  = 0; //state of the Fan Button 
@@ -112,14 +112,14 @@ void setup() {  // put your setup code here, to run once:
   Serial.begin(9600); 
   dht.begin(); //init the Humidity / Temperature sensor
 
-  //relais
-  pinMode(relaisFanPin, OUTPUT);
-  digitalWrite(relaisFanPin, HIGH); //Turn Fan Relais OFF
+  //relay
+  pinMode(relayFanPin, OUTPUT);
+  digitalWrite(relayFanPin, HIGH); //Turn Fan relay OFF
   
-  pinMode(relaisFan1Pin, OUTPUT);
-  digitalWrite(relaisFan1Pin, HIGH); //Turn Fan1 Relais OFF
+  pinMode(relayFan1Pin, OUTPUT);
+  digitalWrite(relayFan1Pin, HIGH); //Turn Fan1 relay OFF
   
-  pinMode(relaisLampPin, OUTPUT);
+  pinMode(relayLampPin, OUTPUT);
 
 
   //buttons
@@ -149,8 +149,8 @@ void loop() { // put your main code here, to run repeatedly:
     SDCard();
     if(timerRunning){ //Fan is on for "timerDelay" time
         if(timer()){ //when timer has finished. Turn off Fan  
-          digitalWrite(relaisFanPin,relaisFanState=1); 
-          digitalWrite(relaisFan1Pin,relaisFan1State=0); 
+          digitalWrite(relayFanPin,relayFanState=1); 
+          digitalWrite(relayFan1Pin,relayFan1State=0); 
           digitalWrite(LEDFanPin, LEDFanState=0); 
           timerRunning = 0;
        }  
@@ -170,7 +170,7 @@ void button(){
 
    debounceReturn=debounce();
 
-  //Fan On/Off /`**  Relais FAN and FAN 1 = ON for delayTimer amount, then FAN= Off and Fan1=On
+  //Fan On/Off /`**  relay FAN and FAN 1 = ON for delayTimer amount, then FAN= Off and Fan1=On
   if (buttonFanState == HIGH && debounceReturn) {
     lastDebounceTime = millis();
     //Serial.print("buttonFanPin pressed");
@@ -180,8 +180,8 @@ void button(){
     }
     digitalWrite(LEDFan2Pin,LEDFan2State=0);
     digitalWrite(LEDFanPin, LEDFanState=!LEDFanState);
-    digitalWrite(relaisFanPin,relaisFanState=!LEDFanState);  
-    digitalWrite(relaisFan1Pin,relaisFan1State=0);    //make sure that old Fan controler has no control over Fan
+    digitalWrite(relayFanPin,relayFanState=!LEDFanState);  
+    digitalWrite(relayFan1Pin,relayFan1State=0);    //make sure that old Fan controler has no control over Fan
 
      if(LEDFanState){
            timerRunning = 1; 
@@ -202,12 +202,12 @@ void button(){
      }
      
      digitalWrite(LEDFan1Pin, LEDFan1State=!LEDFan1State); 
-     digitalWrite(relaisFan1Pin, relaisFan1State=0); //make sure that old Fan controler has no control over Fan
+     digitalWrite(relayFan1Pin, relayFan1State=0); //make sure that old Fan controler has no control over Fan
      fanAuto=LEDFan1State; 
      fanAutoRememberState=LEDFan1State;
      
      if(!fanAuto && !timerRunning){
-      digitalWrite(relaisFanPin,relaisFanState=1);
+      digitalWrite(relayFanPin,relayFanState=1);
      }
    }
 
@@ -225,11 +225,11 @@ void button(){
      digitalWrite(LEDFan2Pin, LEDFan2State=!LEDFan2State);
      
      if(LEDFan2State){
-       digitalWrite(relaisFanPin, relaisFanState=1);
-       digitalWrite(relaisFan1Pin, relaisFan1State=1); 
+       digitalWrite(relayFanPin, relayFanState=1);
+       digitalWrite(relayFan1Pin, relayFan1State=1); 
      }else{
-       digitalWrite(relaisFanPin, relaisFanState=1);
-       digitalWrite(relaisFan1Pin, relaisFan1State=0); 
+       digitalWrite(relayFanPin, relayFanState=1);
+       digitalWrite(relayFan1Pin, relayFan1State=0); 
      }
      
      if(fanAutoRememberState && !LEDFan2State){
@@ -243,7 +243,7 @@ void button(){
       lastDebounceTime = millis();
      //Serial.println("buttonLight pressed");
      digitalWrite(LEDLampPin, LEDLampState=!LEDLampState);
-     digitalWrite(relaisLampPin,relaisLampState=LEDLampState);  
+     digitalWrite(relayLampPin,relayLampState=LEDLampState);  
   }  
  }
  
@@ -297,10 +297,10 @@ void readHumidityTemperature(){
     // Read humitidy 
    float humidity = dht.readHumidity(); 
    if (humidity >  50) {
-         digitalWrite(relaisFanPin,relaisFanState=0);
+         digitalWrite(relayFanPin,relayFanState=0);
     } 
     if (humidity <  45) {
-       digitalWrite(relaisFanPin,relaisFanState=1);
+       digitalWrite(relayFanPin,relayFanState=1);
     } 
  }
  
@@ -347,24 +347,29 @@ int getButtonState(){
   }  
 }
 
+void buttonPressed(){ 
+  lastTimeButtonPressed=millis();
+  active=1;    
+}
 
 void SDCard(){
-     
-    if(active && ((millis()-lastTimeButtonPressed) > 10000)){ //=10 Seconds
-      delayLog=300000; //=5 Minutes
-      active=0;  
-      Serial.print(delayLog);
-      Serial.println(" active=0");
-    }
-
-
-    //Serial.print(millis());
-    //Serial.println(lastLogTime);
+    if(active && ((millis()-lastTimeButtonPressed) > 150)){ //=0.15 Seconds 
+      makeLogEntries();
+      makeLogEntries();  
+      active=0;
+    } 
     
-    if((millis()-lastLogTime) > delayLog)
-    {
+    if((millis()-lastLogTime) > delayLog) {
         lastLogTime=millis(); 
-        // make a string for assembling the data to log:
+        makeLogEntries();
+    } 
+  
+}
+
+
+
+void makeLogEntries(){
+          // make a string for assembling the data to log:
         String dataString = ""; 
            
         dataString +=LEDFanState;
@@ -375,7 +380,7 @@ void SDCard(){
         dataString += ",";
         dataString +=LEDLampState;
         dataString += ",";  
-        dataString +=!relaisFanState;
+        dataString +=!relayFanState;
                
         // open the file. note that only one file can be open at a time,
         // so you have to close this one before opening another.
@@ -388,19 +393,9 @@ void SDCard(){
           // print to the serial port too:
           Serial.println(dataString);
         }
+        
         // if the file isn't open, pop up an error:
         else {
           Serial.println("No SD Card present");
-        } 
-    } 
-  
-}
-
-void buttonPressed(){
-  
-  delayLog=1000; //=1 Second
-  lastTimeButtonPressed=millis();
-  active=1; 
-   Serial.println(" active=1");
-       
+        }   
 }
