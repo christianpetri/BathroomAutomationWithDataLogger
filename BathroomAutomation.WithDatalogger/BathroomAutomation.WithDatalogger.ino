@@ -49,8 +49,7 @@ int active = 0; // is Button delay still active, (Butten pressed, button remains
     // tweak the timings for faster processors.  This parameter is no longer needed
     // as the current DHT reading algorithm adjusts itself to work on faster procs.
   DHT dht(DHTPIN, DHTTYPE);
-/*END Humidity / Temperature*/
-
+/*END Humidity / Temperature*/ 
 /*Start Relay*/
   int relayFanPin = 5; //define on what pin the fan relay is
   int relayFanState = HIGH; //state of the fan relay 
@@ -71,39 +70,17 @@ int active = 0; // is Button delay still active, (Butten pressed, button remains
 /*Start Motion Detection*/
 int motionDetectionPin=8; 
 int motionDetectionState=0;
-unsigned long motionDetectionTimer=300000; //Timer before Light is turned off 300000ms = 5 Minutes
+int motionActive=0;
+unsigned long motionDetectionTimer=10000; //Timer before Light is turned off 300000ms = 5 Minutes
 unsigned long lastMotionDetectedTime = 0;
 /*End Motion Detection*/
 /*Start 2 Way Light Switch*/ 
 int lightSensorPin=9;
 int lightSensorState=0; 
+int currentLightState = 0;
+unsigned long debounceLightDelay= 500ms; //=0.5 Second
+unsigned long lastLightDebounce = 0;
 /*ENd 2 Way Light Switch*/
-void turnLightOn(){ 
-	 if(!digitalRead(lightSensorPin)) { 
-		//if the Light is off, find out what the current Light-Realy state is (0 or 1)
-		//and turn the light on 
-		digitalWrite(relayLightPin , relayLightState=!digitalRead(relayLightPin));
-	 } 	 
-}
-void turnLightOff(){
-	 if(digitalRead(lightSensorPin)) { 
-		//if the Light is on, find out what the current Light Realy state is (0 or 1)
-		//and turn the light off 
-		digitalWrite(relayLightPin , relayLightState=!digitalRead(relayLightPin));
-	 } 	
-}
-
-void motionDetection(){ 
-	if(digitalRead(motionDetectionPin)) {
-		turnLightOn();
-	 	lastMotionDetectedTime=millis(); 
-	}
-	
-	 if(millis()-lastMotionDetectedTime > motionDetectionTimer){
-	 	turnLightOff();
-	 } 	
-}
-
 /*Start Buttons*/
   int buttonsPin = A0; //All the button run through ANALOG 0 
   int buttonFanState  = 0; //state of the Fan Button 
@@ -170,6 +147,7 @@ void loop() { // put your main code here, to run repeatedly:
     unsigned long currentMillis = millis();
     button(); //check if buttons are pressed
     SDCard(); //write log data
+    motionDetection();
     if(timerRunning){ //Fan is on for "timerDelay" time
         if(timer()){ //when timer has finished. Turn off Fan  
           digitalWrite(relayFanPin,relayFanState=1); 
@@ -263,9 +241,13 @@ void button(){
    //Button for the light in the room
    if (buttonLampState == HIGH && debounceReturn) {
       lastDebounceTime = millis();
-     //Serial.println("buttonLight pressed");
-     digitalWrite(LEDLampPin, LEDLightState=!LEDLightState);
-     digitalWrite(relayLightPin,relayLightState=LEDLightState);  
+     Serial.println(currentLightState);
+     Serial.println("buttonLight pressed");
+     changeLightState();
+     digitalWrite(LEDLampPin, currentLightState);
+      Serial.println(currentLightState);
+     //digitalWrite(relayLightPin,relayLightState=LEDLightState);  
+     
   }  
  }
  
@@ -420,15 +402,15 @@ void makeLogEntriesCrude(){
 	 dataString +=temperature;
     // open the file. note that only one file can be open at a time,
     // so you have to close this one before opening another.
-    File dataFile = SD.open("datalog5MinutesCrude.txt", FILE_WRITE);
+    File dataFile = SD.open("crude.txt", FILE_WRITE); //datalog5MinutesCrude
     // if the file is available, write to it:
     if (dataFile) {
       dataFile.println(dataString);
       dataFile.close();
       // print to the serial port too:
-      //Serial.println(dataString);
+      Serial.println(dataString);
     } else { // if the file isn't open, pop up an error:
-      Serial.println("No SD Card present");
+      Serial.println("No crude.txt present");
     }   
 }
 
@@ -454,16 +436,72 @@ void makeLogEntriesPrecise(){
 	 dataString +=temperature;
 	 // open the file. note that only one file can be open at a time,
 	 // so you have to close this one before opening another.
-	 File dataFile = SD.open("datalog30SecondsAndStateChanges.txt", FILE_WRITE);
+	 File dataFile = SD.open("precise.txt", FILE_WRITE);
 	 // if the file is available, write to it:
     if (dataFile) {
       dataFile.println(dataString);
       dataFile.close();
       // print to the serial port too:
-      //Serial.println(dataString);
+      Serial.println(dataString);
     } else { // if the file isn't open, pop up an error:
-      Serial.println("No SD Card present");
+      Serial.println("No precise.txt present");
     } 
 }
+void changeLightState(){
+    if(digitalRead(lightSensorPin)) { 
+    //if the Light is on, find out what the current Light Realy state is (0 or 1)
+    //and turn the light off 
+    if(millis()-lastLightDebounce>debounceLightDelay){
+      digitalWrite(relayLightPin , relayLightState=!digitalRead(relayLightPin));
+      currentLightState=0;
+    }
+    lastLightDebounce = millis();
+   } else {
+    //if the Light is off, find out what the current Light-Realy state is (0 or 1)
+    //and turn the light on 
+     if(millis()-lastLightDebounce>debounceLightDelay){
+        digitalWrite(relayLightPin , relayLightState=!digitalRead(relayLightPin));
+        currentLightState=1;
+      }
+    lastLightDebounce = millis();
+   }
+  
+}
+void turnLightOn(){ 
+   if(!digitalRead(lightSensorPin)) { 
+    //if the Light is off, find out what the current Light-Realy state is (0 or 1)
+    //and turn the light on 
+    if(millis()-lastLightDebounce>debounceLightDelay){
+      digitalWrite(relayLightPin , relayLightState=!digitalRead(relayLightPin));
+      currentLightState=1;
+    }
+    lastLightDebounce = millis();
+   }   
+}
+void turnLightOff(){
+   if(digitalRead(lightSensorPin)) { 
+    //if the Light is on, find out what the current Light Realy state is (0 or 1)
+    //and turn the light off 
+     if(millis()-lastLightDebounce>debounceLightDelay){
+      digitalWrite(relayLightPin , relayLightState=!digitalRead(relayLightPin));
+      currentLightState=0;
+    }
+    lastLightDebounce = millis();
+   }  
+}
 
+
+void motionDetection(){ 
+  if(digitalRead(motionDetectionPin)) {
+    turnLightOn();
+    lastMotionDetectedTime=millis(); 
+    //Serial.println("Moition detected");
+    motionActive=1;
+  }
+  
+   if(millis()-lastMotionDetectedTime > motionDetectionTimer && motionActive){
+    turnLightOff();
+    motionActive=0;
+   }  
+}
  
