@@ -1,4 +1,4 @@
-/* Pins Used: A0 Buttons, A1-A5 LEDs, 2 Humidity/Temp Sensor, 4 SD Card, 5 6 7 Relay, 8 Motion, 9 Light Sensor, 11 12 13 Ethernet Shield
+/* Pins Used: A0 Buttons, A1-A5 LEDs, 2 Humidity/Temp Sensor, 4 SD Card, 5 6 7 Relay, 8 Motion, 9 Light Sensor, 11 12 13 Ethernet Shield*/
 /*Start SD Card*/
     /*SD card datalogger 
     * SD card attached to SPI bus as follows:
@@ -71,7 +71,7 @@
 	int motionDetectionPin=8; 
 	int motionDetectionState=0;
 	int motionActive=0;
-	unsigned long motionDetectionTimer=10000; //Timer before Light is turned off 300000ms = 5 Minutes
+	unsigned long motionDetectionTimer=180000; //Timer before Light is turned off 180000 ms = 3 Minutes
 	unsigned long lastMotionDetectedTime = 0;
 /*End Motion Detection*/
 /*Start 2 Way Light Switch*/ 
@@ -143,20 +143,23 @@ void setup() {  // put your setup code here, to run once:
   }  
 } 
 
-void loop() { // put your main code here, to run repeatedly:
-    unsigned long currentMillis = millis();
+void loop() { // put your main code here, to run repeatedly: 
     button(); //check if buttons are pressed
     SDCard(); //write log data
-    motionDetection();
-    if(timerRunning){ //Fan is on for "timerDelay" time
-        if(timer()){ //when timer has finished. Turn off Fan  
-          digitalWrite(relayFanPin,relayFanState=1); 
-          digitalWrite(relayFan1Pin,relayFan1State=0); 
-          digitalWrite(LEDFanPin, LEDFanState=0); 
-          timerRunning = 0;
-			 autoActive=1;
-       }  
-    } 
+	 if(!digitalRead(LEDLampPin) ){ //if the Motion detection Auto is turned off, allow motion detection
+		   motionDetection();
+	 } 
+	 if(timerRunning){ //Fan is on for "timerDelay" time
+		  if(timer()){ //when timer has finished. Turn off Fan  
+				digitalWrite(relayFanPin,relayFanState=1); 
+				digitalWrite(relayFan1Pin,relayFan1State=0); 
+				digitalWrite(LEDFanPin, LEDFanState=0); 
+				timerRunning = 0;
+				autoActive=1;
+				makeLogEntriesPrecise();
+				makeLogEntriesPrecise();  
+		  }  
+	 } 
      
    if (fanAuto && !timerRunning){ //The fan is in automatic mode. If humidity rises above a certain value turn on fan, else turn off fan
        sensor(); 
@@ -170,7 +173,7 @@ void button(){
    getButtonState(); 
    debounceReturn=debounce();
 
-  //Fan On/Off /`**  relay FAN and FAN 1 = ON for delayTimer amount, then FAN= Off and Fan1=On
+  //Fan On/Off **  relay FAN and FAN 1 = ON for delayTimer amount, then FAN= Off and Fan1=On
   if (buttonFanState == HIGH && debounceReturn) {
     lastDebounceTime = millis();
     //Serial.print("buttonFanPin pressed");
@@ -238,18 +241,17 @@ void button(){
      }
    }
 
-   //Button for the light in the room
+   //Button for the light in the room = Motionen Detection On/Off: LED=on=MD=off, LED=0ff=MD=on
    if (buttonLampState == HIGH && debounceReturn) {
-      lastDebounceTime = millis();
-     Serial.println(currentLightState);
-     Serial.println("buttonLight pressed");
-     changeLightState();
-     digitalWrite(LEDLampPin, currentLightState);
-      Serial.println(currentLightState);
-     //digitalWrite(relayLightPin,relayLightState=LEDLightState);  
-     
+     lastDebounceTime = millis();
+     //Serial.println(currentLightState);
+     //Serial.println("buttonLight pressed");
+     //changeLightState();
+     //digitalWrite(LEDLampPin, currentLightState);
+     //Serial.println(currentLightState);
+     digitalWrite(relayLightPin,LEDLightState=!LEDLightState);  
   }  
- }
+}
  
 int debounce(){
   if (millis() - lastDebounceTime >= debounceDelay ) { 
@@ -299,16 +301,15 @@ void sensor(){
     // Read humitidy 
    int humidity = dht.readHumidity(); 
    if (humidity >  50) {
-         digitalWrite(relayFanPin,relayFanState=0);
+         digitalWrite(relayFanPin,relayFanState=0); //turn fan on
     } 
     if (humidity <  45) {
-       digitalWrite(relayFanPin,relayFanState=1);
+       digitalWrite(relayFanPin,relayFanState=1); //turn fan off
     } 
  }
  
-int timer(){
-  unsigned long currentMillis = millis(); 
-  if(currentMillis-lastTimerTime >= timerDelay){ 
+int timer(){ 
+  if(millis()-lastTimerTime >= timerDelay){ 
     return 1;
   } else {
     return 0;  
@@ -375,8 +376,7 @@ void SDCard(){
     if((millis()-lastLogTimeCrude) > delayLogCrude) {
         lastLogTimeCrude=millis(); 
         makeLogEntriesCrude();
-    } 
-    
+    }    
 } 
 
 void makeLogEntriesCrude(){ 
@@ -448,34 +448,29 @@ void makeLogEntriesPrecise(){
 }
 
 void changeLightState(){
-    if(digitalRead(lightSensorPin)) { 
-    //if the Light is on, find out what the current Light Realy state is (0 or 1)
+	 //if the Light is on, find out what the current Light Realy state is (0 or 1)
     //and turn the light off 
-    if(millis()-lastLightDebounce>debounceLightDelay){
-      digitalWrite(relayLightPin , relayLightState=!digitalRead(relayLightPin));
-      currentLightState=0;
-    }
-    lastLightDebounce = millis();
-   } else {
-    //if the Light is off, find out what the current Light-Realy state is (0 or 1)
-    //and turn the light on 
-     if(millis()-lastLightDebounce>debounceLightDelay){
-        digitalWrite(relayLightPin , relayLightState=!digitalRead(relayLightPin));
-        currentLightState=1;
-      }
-    lastLightDebounce = millis();
+	 //if the Light is off, find out what the current Light-Realy state is (0 or 1)
+    //and turn the light on  
+    if(digitalRead(lightSensorPin)) {  
+		currentLightState=0; 
+   } else { 
+		currentLightState=1;  
    }
-  
+	if(debounceLightSensor()){ 
+		digitalWrite(relayLightPin , relayLightState=!digitalRead(relayLightPin));
+	}
+ 	lastLightDebounce = millis();
 }
 
 void turnLightOn(){ 
    if(!digitalRead(lightSensorPin)) { 
     //if the Light is off, find out what the current Light-Realy state is (0 or 1)
     //and turn the light on 
-    if(millis()-lastLightDebounce>debounceLightDelay){
+    if(debounceLightSensor()){
       digitalWrite(relayLightPin , relayLightState=!digitalRead(relayLightPin));
       currentLightState=1;
-    }
+    } 
     lastLightDebounce = millis();
    }   
 }
@@ -484,7 +479,7 @@ void turnLightOff(){
    if(digitalRead(lightSensorPin)) { 
     //if the Light is on, find out what the current Light Realy state is (0 or 1)
     //and turn the light off 
-     if(millis()-lastLightDebounce>debounceLightDelay){
+     if(debounceLightSensor()){
       digitalWrite(relayLightPin , relayLightState=!digitalRead(relayLightPin));
       currentLightState=0;
     }
@@ -499,10 +494,24 @@ void motionDetection(){
     //Serial.println("Moition detected");
     motionActive=1;
   }
+  if(!digitalRead(relayFanPin)){ //if the fan is running, make the dely 15 Minutes, else 3 Minutes //relayFan LOW = ON
+    motionDetectionTimer= 900000; // 900000 ms = 15 Minutes
+  } else{
+    motionDetectionTimer= 180000; // 180000 ms = 3 Minutes
+  }
   
-   if(millis()-lastMotionDetectedTime > motionDetectionTimer && motionActive){
+  if(millis()-lastMotionDetectedTime > motionDetectionTimer && motionActive){
     turnLightOff();
     motionActive=0;
-   }  
+  } 
+
 }
- 
+
+int debounceLightSensor(){
+     if(millis()-lastLightDebounce>debounceLightDelay){
+         return 1;
+     } else{
+         return 0;
+     }
+    
+}
