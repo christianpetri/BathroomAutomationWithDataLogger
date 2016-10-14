@@ -1,3 +1,4 @@
+/* Pins Used: A0 Buttons, A1-A5 LEDs, 2 Humidity/Temp Sensor, 4 SD Card, 5 6 7 Relay, 8 Motion, 9 Light Sensor, 11 12 13 Ethernet Shield
 /*Start SD Card*/
     /*SD card datalogger 
     * SD card attached to SPI bus as follows:
@@ -9,17 +10,17 @@
     This example code is in the public domain.
     */
 
-#include <SPI.h>
-#include <SD.h>
+	#include <SPI.h>
+	#include <SD.h>
 
-const int chipSelect = 4;  //The SD card uses Pin 4!
+	const int chipSelect = 4;  //The SD card uses Pin 4!
 
-unsigned long delayLogCrude =300000; //Delay Log  Crude     300000ms    = 5     Minutes
-unsigned long delayLogPrecise =30000; //Delay Log Presice   30000ms     = 30    Seconds
-unsigned long lastTimeButtonPressed = 0; //When was the button last pressed (milliseconds from last reset) 
-unsigned long lastLogTimeCrude = 0; //Set last log time ""
-unsigned long lastLogTimePrecise = 0; //Set last log time "" delayLogPresice
-int active = 0; // is Button delay still active, (Butten pressed, button remains "active" for 10 Seconds)
+	unsigned long delayLogCrude =300000; //Delay Log  Crude     300000ms    = 5     Minutes
+	unsigned long delayLogPrecise =30000; //Delay Log Presice   30000ms     = 30    Seconds
+	unsigned long lastTimeButtonPressed = 0; //When was the button last pressed (milliseconds from last reset) 
+	unsigned long lastLogTimeCrude = 0; //Set last log time ""
+	unsigned long lastLogTimePrecise = 0; //Set last log time "" delayLogPresice
+	int active = 0; // is Button delay still active, (Butten pressed, button remains "active" for 10 Seconds)
 /*End  SD Card*/
 /*Start Timer*/
   const long timerDelay = 3600000; // for how long the timer will run in MilliSeconds (3600000 ms = 1 Hour)
@@ -28,7 +29,6 @@ int active = 0; // is Button delay still active, (Butten pressed, button remains
 /*End Timer*/
  /*START Humidity / Temperature*/
         // Example testing sketch for various DHT humidity/temperature sensors // Written by ladyada, public domain
-          
     #include "DHT.h" 
     #define DHTPIN 2     // what digital pin we're connected to = Pin 2
   
@@ -52,15 +52,15 @@ int active = 0; // is Button delay still active, (Butten pressed, button remains
 /*END Humidity / Temperature*/ 
 /*Start Relay*/
   int relayFanPin = 5; //define on what pin the fan relay is
-  int relayFanState = HIGH; //state of the fan relay 
+  int relayFanState = 1; //state of the fan relay. For the FAN relay LOW=On
   
   int relayFan1Pin = 6; //define on what pin the fan1 relay is
-  int relayFan1State = 1; //state of the fan1 relay 
+  int relayFan1State = 1; //state of the fan1 relay. For the FAN relay LOW=On
    
   int relayLightPin = 7; //define on what pin the light relay is
   int relayLightState = 0; //state of the Light relay 
 
-  int state=0; //add reverse boolean function: For relay FAN LOW=On, for relay Lamp HIGH=On
+  int state=0; //add reverse boolean function: For the FAN relay LOW=On
 /*End Relay*/
 /*Start Fan Auto */
   int fanAuto=0; //Check if Fan Auto Mode is on or off (on= 1=true , off= 0=false)
@@ -68,18 +68,18 @@ int active = 0; // is Button delay still active, (Butten pressed, button remains
   int autoActive=0;
 /*End Fan Auto */
 /*Start Motion Detection*/
-int motionDetectionPin=8; 
-int motionDetectionState=0;
-int motionActive=0;
-unsigned long motionDetectionTimer=10000; //Timer before Light is turned off 300000ms = 5 Minutes
-unsigned long lastMotionDetectedTime = 0;
+	int motionDetectionPin=8; 
+	int motionDetectionState=0;
+	int motionActive=0;
+	unsigned long motionDetectionTimer=10000; //Timer before Light is turned off 300000ms = 5 Minutes
+	unsigned long lastMotionDetectedTime = 0;
 /*End Motion Detection*/
 /*Start 2 Way Light Switch*/ 
-int lightSensorPin=9;
-int lightSensorState=0; 
-int currentLightState = 0;
-unsigned long debounceLightDelay= 500ms; //=0.5 Second
-unsigned long lastLightDebounce = 0;
+	int lightSensorPin=9;
+	int lightSensorState=0; 
+	int currentLightState = 0;
+	unsigned long debounceLightDelay= 1000; //= 1 Second
+	unsigned long lastLightDebounce = 0;
 /*ENd 2 Way Light Switch*/
 /*Start Buttons*/
   int buttonsPin = A0; //All the button run through ANALOG 0 
@@ -295,7 +295,7 @@ void readHumidityTemperature(){
   Serial.println(" *F"); 
 }
 
- void sensor(){ 
+void sensor(){ 
     // Read humitidy 
    int humidity = dht.readHumidity(); 
    if (humidity >  50) {
@@ -314,7 +314,6 @@ int timer(){
     return 0;  
   }   
 }
-
 
 int getButtonState(){
    //Read the Analog value from the resistor ladder and determine what button was pushed
@@ -423,7 +422,7 @@ void makeLogEntriesPrecise(){
     dataString += ",";
     dataString +=LEDFan2State;
     dataString += ",";
-    dataString +=LEDLightState;
+    dataString +=currentLightState;
     dataString += ",";  
     dataString +=!relayFanState; //When the relay is 0=LOW, Fan it is on. for the log 1 mean on, so I have to get the inverse
 	 
@@ -447,6 +446,7 @@ void makeLogEntriesPrecise(){
       Serial.println("No precise.txt present");
     } 
 }
+
 void changeLightState(){
     if(digitalRead(lightSensorPin)) { 
     //if the Light is on, find out what the current Light Realy state is (0 or 1)
@@ -467,6 +467,7 @@ void changeLightState(){
    }
   
 }
+
 void turnLightOn(){ 
    if(!digitalRead(lightSensorPin)) { 
     //if the Light is off, find out what the current Light-Realy state is (0 or 1)
@@ -478,6 +479,7 @@ void turnLightOn(){
     lastLightDebounce = millis();
    }   
 }
+
 void turnLightOff(){
    if(digitalRead(lightSensorPin)) { 
     //if the Light is on, find out what the current Light Realy state is (0 or 1)
@@ -489,7 +491,6 @@ void turnLightOff(){
     lastLightDebounce = millis();
    }  
 }
-
 
 void motionDetection(){ 
   if(digitalRead(motionDetectionPin)) {
