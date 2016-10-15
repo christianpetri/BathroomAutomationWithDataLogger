@@ -98,7 +98,7 @@
   int LEDFan2Pin = A3; //define on what pin the LED Fan1 is
   int LEDFan2State = 1; //state of LED Fan2
 
-  int LEDLampPin = A4; //define on what pin the LED Light  is
+  int LEDLightPin = A4; //define on what pin the LED Light  is
   int LEDLightState = 0; //state of LED Light 
 /*End LED*/
 /*Start debounce Button*/
@@ -131,7 +131,7 @@ void setup() {  // put your setup code here, to run once:
   pinMode(LEDFan1Pin, OUTPUT);
   pinMode(LEDFan2Pin, OUTPUT);
      digitalWrite(LEDFan2Pin,LEDFan2State);
-  pinMode(LEDLampPin, OUTPUT);
+  pinMode(LEDLightPin, OUTPUT);
 
   //SD Card
   // Serial.print("Initializing SD card...");
@@ -146,7 +146,7 @@ void setup() {  // put your setup code here, to run once:
 void loop() { // put your main code here, to run repeatedly: 
     button(); //check if buttons are pressed
     SDCard(); //write log data
-	 if(!digitalRead(LEDLampPin) ){ //if the Motion detection Auto is turned off, allow motion detection
+	 if(!LEDLightState){ //if the Motion detection Auto is turned off, allow motion detection
 		   motionDetection();
 	 } 
 	 if(timerRunning){ //Fan is on for "timerDelay" time
@@ -247,9 +247,10 @@ void button(){
      //Serial.println(currentLightState);
      //Serial.println("buttonLight pressed");
      //changeLightState();
-     //digitalWrite(LEDLampPin, currentLightState);
-     //Serial.println(currentLightState);
-     digitalWrite(relayLightPin,LEDLightState=!LEDLightState);  
+     //digitalWrite(LEDLightPin, currentLightState);
+     Serial.println(LEDLightState);
+     digitalWrite(LEDLightPin,LEDLightState=!LEDLightState);  
+   
   }  
 }
  
@@ -499,7 +500,7 @@ void motionDetection(){
   } else{
     motionDetectionTimer= 180000; // 180000 ms = 3 Minutes
   }
-  
+   
   if(millis()-lastMotionDetectedTime > motionDetectionTimer && motionActive){
     turnLightOff();
     motionActive=0;
