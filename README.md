@@ -8,3 +8,5 @@ The user will get a simple control panel.
 
 
 This project if a part of a school project for the HF Informatik "Programmieren in C"
+
+https://docs.google.com/document/d/1DTLK0gTAqSl-Gdwl5znODC77ylZytWt4fBGn7Vkk1Pc/pub
