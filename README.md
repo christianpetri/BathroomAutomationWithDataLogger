@@ -11,4 +11,4 @@ This project if a part of a school project for the HF Informatik "Programmieren 
 
 Here is the complete documentaion of the project:
 
-https://docs.google.com/document/d/1DTLK0gTAqSl-Gdwl5znODC77ylZytWt4fBGn7Vkk1Pc/pub
+https://docs.google.com/document/d/1DTLK0gTAqSl-Gdwl5znODC77ylZytWt4fBGn7Vkk1Pc/edit?usp=sharing
