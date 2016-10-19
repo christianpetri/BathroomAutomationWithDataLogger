@@ -73,6 +73,9 @@
 	int motionActive=0;
 	unsigned long motionDetectionTimer=180000; //Timer before Light is turned off 180000 ms = 3 Minutes
 	unsigned long lastMotionDetectedTime = 0;
+	unsigned long lastTimeLightTurnedOffManually=0;
+	int deactivateMotionDetection=0;
+	unsigned int deactivateMotionDetectionTimer=10000; //10000 ms = 10 seconds;
 /*End Motion Detection*/
 /*Start 2 Way Light Switch*/ 
 	int lightSensorPin=9;
@@ -142,29 +145,12 @@ void setup() {  // put your setup code here, to run once:
     //Serial.println(" card initialized."); 
   }  
 } 
-
 void loop() { // put your main code here, to run repeatedly: 
     button(); //check if buttons are pressed
     SDCard(); //write log data
-	 if(!LEDLightState){ //if the Motion detection Auto is turned off, allow motion detection
-		   motionDetection();
-	 } 
-	 if(timerRunning){ //Fan is on for "timerDelay" time
-		  if(timer()){ //when timer has finished. Turn off Fan  
-				digitalWrite(relayFanPin,relayFanState=1); 
-				digitalWrite(relayFan1Pin,relayFan1State=0); 
-				digitalWrite(LEDFanPin, LEDFanState=0); 
-				timerRunning = 0;
-				autoActive=1;
-				makeLogEntriesPrecise();
-				makeLogEntriesPrecise();  
-		  }  
-	 } 
-     
-   if (fanAuto && !timerRunning){ //The fan is in automatic mode. If humidity rises above a certain value turn on fan, else turn off fan
-       sensor(); 
-   }
-  
+	 motionDetectionGeneral(); //check if it is enabled and turn the light on off accordingly
+	 fan();
+	 fanAuto(); //Check if FAN AUTO  is enabled and turn the fan on off accordingly 
    //readHumidityTemperature(); //Uncomment when you want to check if the temp and the humidity sensor is working
 }
 
@@ -253,14 +239,242 @@ void button(){
    
   }  
 }
- 
-int debounce(){
+int  debounce(){
   if (millis() - lastDebounceTime >= debounceDelay ) { 
     return 1;
   } else {
     return 0;  
   }  
 }
+int  getButtonState(){
+   //Read the Analog value from the resistor ladder and determine what button was pushed
+  int value= analogRead(A0);
+  //Serial.println (value);
+  if(value<=1024  &&  value >=1013){
+     buttonLampState=HIGH;
+     buttonPressed();
+  } else {
+     buttonLampState=LOW;
+  }
+  
+   if(value <= 521 && value >= 501){
+     buttonFan2State=HIGH;
+     buttonPressed();
+  } else {
+     buttonFan2State=LOW; 
+  }
+  
+   if(value <= 350  && value >= 330){
+     buttonFan1State=HIGH;
+     buttonPressed();
+  } else {
+     buttonFan1State=LOW;
+  }
+  
+   if(value >= 240 && value <= 260){
+     buttonFanState=HIGH;
+     buttonPressed();
+  } else {
+     buttonFanState=LOW;
+  }  
+}
+void buttonPressed(){ 
+  lastTimeButtonPressed=millis();
+  active=1;    
+}
+
+void SDCard(){
+	 //make Log entry after button is pressed
+    if(active && ((millis()-lastTimeButtonPressed) > 150)){ //=0.15 Seconds 
+      makeLogEntriesPrecise();
+      makeLogEntriesPrecise();  
+      active=0;
+    }  
+	 //make a Precise Log entry
+    if(millis()-lastLogTimePrecise > delayLogPrecise){  
+       lastLogTimePrecise=millis();
+		 makeLogEntriesPrecise();
+    } 
+    //make a Crude Log entry
+    if((millis()-lastLogTimeCrude) > delayLogCrude) {
+        lastLogTimeCrude=millis(); 
+        makeLogEntriesCrude();
+    }    
+} 
+void makeLogEntriesCrude(){ 
+    // make a string for assembling the data to log:
+    String dataString = "";    
+    dataString +=LEDFanState;
+    dataString += ",";
+    dataString +=LEDFan1State;
+    dataString += ",";
+    dataString +=LEDFan2State;
+    dataString += ",";
+    dataString +=LEDLightState;
+    dataString += ",";  
+    dataString +=!relayFanState; //When the relay is 0=LOW, Fan it is on. for the log 1 mean on, so I have to get the inverse
+	 
+	 int humidity = dht.readHumidity();
+	 dataString += ",";  
+	 dataString +=humidity;
+	 
+	 int temperature=dht.readTemperature();
+	 dataString += ",";  
+	 dataString +=temperature;
+    // open the file. note that only one file can be open at a time,
+    // so you have to close this one before opening another.
+    File dataFile = SD.open("crude.txt", FILE_WRITE); //datalog5MinutesCrude
+    // if the file is available, write to it:
+    if (dataFile) {
+      dataFile.println(dataString);
+      dataFile.close();
+      // print to the serial port too:
+      Serial.println(dataString);
+    } else { // if the file isn't open, pop up an error:
+      Serial.println("No crude.txt present");
+    }   
+}
+void makeLogEntriesPrecise(){ 
+	 // make a string for assembling the data to log:
+    String dataString = "";    
+    dataString +=LEDFanState;
+    dataString += ",";
+    dataString +=LEDFan1State;
+    dataString += ",";
+    dataString +=LEDFan2State;
+    dataString += ",";
+    dataString +=currentLightState;
+    dataString += ",";  
+    dataString +=!relayFanState; //When the relay is 0=LOW, Fan it is on. for the log 1 mean on, so I have to get the inverse
+	 
+	 int humidity = dht.readHumidity();
+	 dataString += ",";  
+	 dataString +=humidity;
+	 
+	 int temperature=dht.readTemperature();
+	 dataString += ",";  
+	 dataString +=temperature;
+	 // open the file. note that only one file can be open at a time,
+	 // so you have to close this one before opening another.
+	 File dataFile = SD.open("precise.txt", FILE_WRITE);
+	 // if the file is available, write to it:
+    if (dataFile) {
+      dataFile.println(dataString);
+      dataFile.close();
+      // print to the serial port too:
+      Serial.println(dataString);
+    } else { // if the file isn't open, pop up an error:
+      Serial.println("No precise.txt present");
+    } 
+}
+
+void motionDetectionGeneral(){
+	if(millis()-lastTimeLightTurnedOffManually > deactivateMotionDetectionTimer && deactivateMotionDetection){
+		deactivateMotionDetection=0;
+		digitalWrite(LEDLightPin, LEDLightState=0);
+	}
+	 if(!LEDLightState){ //if the Motion detection Auto is turned off, allow motion detection
+		   motionDetection();
+	 } 
+}
+void motionDetection(){ 
+  if(digitalRead(motionDetectionPin)) { //if motion is detected, turn on light
+    turnLightOn();
+    lastMotionDetectedTime=millis();  //reset the timer
+    //Serial.println("Moition detected");
+    motionActive=1;
+  }
+  if(!digitalRead(relayFanPin)){ //if the fan is running, make the delay 15 Minutes, else 3 Minutes //relayFan LOW = ON
+    motionDetectionTimer= 900000; // 900000 ms = 15 Minutes
+  } else{
+    motionDetectionTimer= 180000; // 180000 ms = 3 Minutes
+  }
+	
+	if(!digitalRead(lightSensorPin) && motionActive) { 
+		//if the Light is turned off manually and motion is still active disable motion detection for 10 Seconds     
+		digitalWrite(LEDLightPin, LEDLightState=1);
+		lastTimeLightTurnedOffManually=millis();
+		deactivateMotionDetection=1;		 
+	}  
+	if(millis()-lastMotionDetectedTime > motionDetectionTimer && motionActive){
+		turnLightOff();
+		motionActive=0;
+	}  
+}
+void changeLightState(){
+	 //if the Light is on, find out what the current Light Realy state is (0 or 1)
+    //and turn the light off 
+	 //if the Light is off, find out what the current Light-Realy state is (0 or 1)
+    //and turn the light on  
+    if(digitalRead(lightSensorPin)) {  
+		currentLightState=0; 
+   } else { 
+		currentLightState=1;  
+   }
+	if(debounceLightSensor()){ 
+		digitalWrite(relayLightPin , relayLightState=!digitalRead(relayLightPin));
+	}
+ 	lastLightDebounce = millis();
+}
+void turnLightOn(){ 
+   if(!digitalRead(lightSensorPin)) { 
+    //if the Light is off, find out what the current Light-Realy state is (0 or 1)
+    //and turn the light on 
+    if(debounceLightSensor()){
+      digitalWrite(relayLightPin , relayLightState=!digitalRead(relayLightPin));
+      currentLightState=1;
+    } 
+    lastLightDebounce = millis();
+   }   
+}
+void turnLightOff(){
+   if(digitalRead(lightSensorPin)) { 
+    //if the Light is on, find out what the current Light Realy state is (0 or 1)
+    //and turn the light off 
+     if(debounceLightSensor()){
+      digitalWrite(relayLightPin , relayLightState=!digitalRead(relayLightPin));
+      currentLightState=0;
+    }
+    lastLightDebounce = millis();
+   }  
+}
+int  debounceLightSensor(){
+	if(millis()-lastLightDebounce>debounceLightDelay){
+		return 1;
+	} else{
+		return 0;
+	}
+    
+}
+
+void fan(){
+	if(timerRunning){ //Fan is on for "timerDelay" time
+		  if(millis()-lastTimerTime >= timerDelay){ //when timer has finished. Turn off Fan  
+				digitalWrite(relayFanPin,relayFanState=1); 
+				digitalWrite(relayFan1Pin,relayFan1State=0); 
+				digitalWrite(LEDFanPin, LEDFanState=0); 
+				timerRunning = 0;
+				autoActive=1;
+				makeLogEntriesPrecise();
+				makeLogEntriesPrecise();  
+		  }  
+	 } 
+}
+void fanAuto(){
+	if (fanAuto && !timerRunning){ //The fan is in automatic mode. If humidity rises above a certain value turn on fan, else turn off fan
+       sensor(); 
+   }
+}
+void sensor(){ 
+    // Read humitidy 
+   int humidity = dht.readHumidity(); 
+   if (humidity >  70) {
+         digitalWrite(relayFanPin,relayFanState=0); //turn fan on
+    } 
+    if (humidity <  65) {
+       digitalWrite(relayFanPin,relayFanState=1); //turn fan off
+    } 
+ }
 
 void readHumidityTemperature(){
    
@@ -296,223 +510,4 @@ void readHumidityTemperature(){
   Serial.print(" *C ");
   Serial.print(hif);
   Serial.println(" *F"); 
-}
-
-void sensor(){ 
-    // Read humitidy 
-   int humidity = dht.readHumidity(); 
-   if (humidity >  70) {
-         digitalWrite(relayFanPin,relayFanState=0); //turn fan on
-    } 
-    if (humidity <  65) {
-       digitalWrite(relayFanPin,relayFanState=1); //turn fan off
-    } 
- }
- 
-int timer(){ 
-  if(millis()-lastTimerTime >= timerDelay){ 
-    return 1;
-  } else {
-    return 0;  
-  }   
-}
-
-int getButtonState(){
-   //Read the Analog value from the resistor ladder and determine what button was pushed
-  int value= analogRead(A0);
-  //Serial.println (value);
-  if(value<=1024  &&  value >=1013){
-     buttonLampState=HIGH;
-     buttonPressed();
-  } else {
-     buttonLampState=LOW;
-  }
-  
-   if(value <= 521 && value >= 501){
-     buttonFan2State=HIGH;
-     buttonPressed();
-  } else {
-     buttonFan2State=LOW; 
-  }
-  
-   if(value <= 350  && value >= 330){
-     buttonFan1State=HIGH;
-     buttonPressed();
-  } else {
-     buttonFan1State=LOW;
-  }
-  
-   if(value >= 240 && value <= 260){
-     buttonFanState=HIGH;
-     buttonPressed();
-  } else {
-     buttonFanState=LOW;
-  }  
-}
-
-void buttonPressed(){ 
-  lastTimeButtonPressed=millis();
-  active=1;    
-}
-
-void SDCard(){
-	 //make Log entry after button is pressed
-    if(active && ((millis()-lastTimeButtonPressed) > 150)){ //=0.15 Seconds 
-      makeLogEntriesPrecise();
-      makeLogEntriesPrecise();  
-      active=0;
-    } 
-	 //make log entry when the FAN Auto state changes && Light Auto State changes
-	 if(autoActive && ((false)||(false))){
-	   makeLogEntriesPrecise();
-      makeLogEntriesPrecise();
-	 	autoActive=0;
-	 }
-	 //make a Precise Log entry
-    if(millis()-lastLogTimePrecise > delayLogPrecise){  
-       lastLogTimePrecise=millis();
-		 makeLogEntriesPrecise();
-    } 
-    //make a Crude Log entry
-    if((millis()-lastLogTimeCrude) > delayLogCrude) {
-        lastLogTimeCrude=millis(); 
-        makeLogEntriesCrude();
-    }    
-} 
-
-void makeLogEntriesCrude(){ 
-    // make a string for assembling the data to log:
-    String dataString = "";    
-    dataString +=LEDFanState;
-    dataString += ",";
-    dataString +=LEDFan1State;
-    dataString += ",";
-    dataString +=LEDFan2State;
-    dataString += ",";
-    dataString +=LEDLightState;
-    dataString += ",";  
-    dataString +=!relayFanState; //When the relay is 0=LOW, Fan it is on. for the log 1 mean on, so I have to get the inverse
-	 
-	 int humidity = dht.readHumidity();
-	 dataString += ",";  
-	 dataString +=humidity;
-	 
-	 int temperature=dht.readTemperature();
-	 dataString += ",";  
-	 dataString +=temperature;
-    // open the file. note that only one file can be open at a time,
-    // so you have to close this one before opening another.
-    File dataFile = SD.open("crude.txt", FILE_WRITE); //datalog5MinutesCrude
-    // if the file is available, write to it:
-    if (dataFile) {
-      dataFile.println(dataString);
-      dataFile.close();
-      // print to the serial port too:
-      Serial.println(dataString);
-    } else { // if the file isn't open, pop up an error:
-      Serial.println("No crude.txt present");
-    }   
-}
-
-void makeLogEntriesPrecise(){ 
-	 // make a string for assembling the data to log:
-    String dataString = "";    
-    dataString +=LEDFanState;
-    dataString += ",";
-    dataString +=LEDFan1State;
-    dataString += ",";
-    dataString +=LEDFan2State;
-    dataString += ",";
-    dataString +=currentLightState;
-    dataString += ",";  
-    dataString +=!relayFanState; //When the relay is 0=LOW, Fan it is on. for the log 1 mean on, so I have to get the inverse
-	 
-	 int humidity = dht.readHumidity();
-	 dataString += ",";  
-	 dataString +=humidity;
-	 
-	 int temperature=dht.readTemperature();
-	 dataString += ",";  
-	 dataString +=temperature;
-	 // open the file. note that only one file can be open at a time,
-	 // so you have to close this one before opening another.
-	 File dataFile = SD.open("precise.txt", FILE_WRITE);
-	 // if the file is available, write to it:
-    if (dataFile) {
-      dataFile.println(dataString);
-      dataFile.close();
-      // print to the serial port too:
-      Serial.println(dataString);
-    } else { // if the file isn't open, pop up an error:
-      Serial.println("No precise.txt present");
-    } 
-}
-
-void changeLightState(){
-	 //if the Light is on, find out what the current Light Realy state is (0 or 1)
-    //and turn the light off 
-	 //if the Light is off, find out what the current Light-Realy state is (0 or 1)
-    //and turn the light on  
-    if(digitalRead(lightSensorPin)) {  
-		currentLightState=0; 
-   } else { 
-		currentLightState=1;  
-   }
-	if(debounceLightSensor()){ 
-		digitalWrite(relayLightPin , relayLightState=!digitalRead(relayLightPin));
-	}
- 	lastLightDebounce = millis();
-}
-
-void turnLightOn(){ 
-   if(!digitalRead(lightSensorPin)) { 
-    //if the Light is off, find out what the current Light-Realy state is (0 or 1)
-    //and turn the light on 
-    if(debounceLightSensor()){
-      digitalWrite(relayLightPin , relayLightState=!digitalRead(relayLightPin));
-      currentLightState=1;
-    } 
-    lastLightDebounce = millis();
-   }   
-}
-
-void turnLightOff(){
-   if(digitalRead(lightSensorPin)) { 
-    //if the Light is on, find out what the current Light Realy state is (0 or 1)
-    //and turn the light off 
-     if(debounceLightSensor()){
-      digitalWrite(relayLightPin , relayLightState=!digitalRead(relayLightPin));
-      currentLightState=0;
-    }
-    lastLightDebounce = millis();
-   }  
-}
-
-void motionDetection(){ 
-  if(digitalRead(motionDetectionPin)) {
-    turnLightOn();
-    lastMotionDetectedTime=millis(); 
-    //Serial.println("Moition detected");
-    motionActive=1;
-  }
-  if(!digitalRead(relayFanPin)){ //if the fan is running, make the dely 15 Minutes, else 3 Minutes //relayFan LOW = ON
-    motionDetectionTimer= 900000; // 900000 ms = 15 Minutes
-  } else{
-    motionDetectionTimer= 180000; // 180000 ms = 3 Minutes
-  }
-   
-  if(millis()-lastMotionDetectedTime > motionDetectionTimer && motionActive){
-    turnLightOff();
-    motionActive=0;
-  } 
-
-}
-
-int debounceLightSensor(){
-     if(millis()-lastLightDebounce>debounceLightDelay){
-         return 1;
-     } else{
-         return 0;
-     }
-    
 }
