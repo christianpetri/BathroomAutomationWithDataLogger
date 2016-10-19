@@ -150,7 +150,7 @@ void loop() { // put your main code here, to run repeatedly:
     SDCard(); //write log data
 	 motionDetectionGeneral(); //check if it is enabled and turn the light on off accordingly
 	 fan();
-	 fanAuto(); //Check if FAN AUTO  is enabled and turn the fan on off accordingly 
+	 fanAutoOnOff(); //Check if FAN AUTO  is enabled and turn the fan on off accordingly 
    //readHumidityTemperature(); //Uncomment when you want to check if the temp and the humidity sensor is working
 }
 
@@ -460,7 +460,7 @@ void fan(){
 		  }  
 	 } 
 }
-void fanAuto(){
+void fanAutoOnOff(){
 	if (fanAuto && !timerRunning){ //The fan is in automatic mode. If humidity rises above a certain value turn on fan, else turn off fan
        sensor(); 
    }
