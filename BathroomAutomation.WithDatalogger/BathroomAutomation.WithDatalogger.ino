@@ -237,7 +237,10 @@ void button(){
      //Serial.println("buttonLight pressed");
      //changeLightState();
      //digitalWrite(LEDLightPin, currentLightState);
-     Serial.println(LEDLightState);
+     if(deactivateMotionDetection){
+				 deactivateMotionDetection=0;
+				 LEDLightState=0;
+		 }
      digitalWrite(LEDLightPin,LEDLightState=!LEDLightState);  
    
   }  
