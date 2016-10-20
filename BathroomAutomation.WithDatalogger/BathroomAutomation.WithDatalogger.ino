@@ -75,7 +75,7 @@
 	unsigned long lastMotionDetectedTime = 0;
 	unsigned long lastTimeLightTurnedOffManually=0;
 	int deactivateMotionDetection=0;
-	unsigned int deactivateMotionDetectionTimer=10000; //10000 ms = 10 seconds;
+	unsigned int deactivateMotionDetectionTimer=5000; // 5000 ms = 5 seconds;
 /*End Motion Detection*/
 /*Start 2 Way Light Switch*/ 
 	int lightSensorPin=9;
@@ -99,7 +99,7 @@
   int LEDFan1State = 0; //state of LED Fan1
 
   int LEDFan2Pin = A3; //define on what pin the LED Fan1 is
-  int LEDFan2State = 1; //state of LED Fan2
+  int LEDFan2State = 0; //state of LED Fan2
 
   int LEDLightPin = A4; //define on what pin the LED Light  is
   int LEDLightState = 0; //state of LED Light 
@@ -122,7 +122,7 @@ void setup() {  // put your setup code here, to run once:
   digitalWrite(relayFanPin, HIGH); //Turn Fan relay OFF
   
   pinMode(relayFan1Pin, OUTPUT);
-  digitalWrite(relayFan1Pin, HIGH); //Turn Fan1 relay OFF
+  digitalWrite(relayFan1Pin, LOW); //Turn Fan1 relay On
   
   pinMode(relayLightPin, OUTPUT);
  
@@ -372,13 +372,13 @@ void makeLogEntriesPrecise(){
 }
 
 void motionDetectionGeneral(){
-	if(millis()-lastTimeLightTurnedOffManually > deactivateMotionDetectionTimer && deactivateMotionDetection){
-		deactivateMotionDetection=0;
-		digitalWrite(LEDLightPin, LEDLightState=0);
-	}
 	 if(!LEDLightState){ //if the Motion detection Auto is turned off, allow motion detection
 		   motionDetection();
 	 } 
+   if(millis()-lastTimeLightTurnedOffManually > deactivateMotionDetectionTimer && deactivateMotionDetection){
+    deactivateMotionDetection=0;
+    digitalWrite(LEDLightPin, LEDLightState=0);
+  }
 }
 void motionDetection(){ 
   if(digitalRead(motionDetectionPin)) { //if motion is detected, turn on light
@@ -393,11 +393,12 @@ void motionDetection(){
     motionDetectionTimer= 180000; // 180000 ms = 3 Minutes
   }
 	
-	if(!digitalRead(lightSensorPin) && motionActive) { 
+	if(!digitalRead(lightSensorPin) && motionActive && debounceLightSensor()) { 
 		//if the Light is turned off manually and motion is still active disable motion detection for 10 Seconds     
 		digitalWrite(LEDLightPin, LEDLightState=1);
 		lastTimeLightTurnedOffManually=millis();
-		deactivateMotionDetection=1;		 
+		deactivateMotionDetection=1;	
+    motionActive=0;	 
 	}  
 	if(millis()-lastMotionDetectedTime > motionDetectionTimer && motionActive){
 		turnLightOff();
