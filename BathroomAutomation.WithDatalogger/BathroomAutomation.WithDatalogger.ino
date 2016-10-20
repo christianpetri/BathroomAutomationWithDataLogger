@@ -128,6 +128,9 @@ void setup() {  // put your setup code here, to run once:
  
   //buttons
   pinMode(buttonsPin, INPUT);
+  
+  //photoresistor
+  pinMode(lightSensorPin, INPUT);
  
   //LEDs
   pinMode(LEDFanPin, OUTPUT);
