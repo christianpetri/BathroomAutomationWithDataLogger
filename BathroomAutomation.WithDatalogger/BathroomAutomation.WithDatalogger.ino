@@ -71,19 +71,19 @@
 	int motionDetectionPin=8; 
 	int motionDetectionState=0;
 	int motionActive=0;
-	unsigned long motionDetectionTimer=180000; //Timer before Light is turned off 180000 ms = 3 Minutes
+	unsigned long motionDetectionTimer=60000; //Timer before Light is turned off 180000 ms = 3 Minutes // 60000 ms = 1 Minute
 	unsigned long lastMotionDetectedTime = 0;
 	unsigned long lastTimeLightTurnedOffManually=0;
 	int deactivateMotionDetection=0;
 	unsigned int deactivateMotionDetectionTimer=5000; // 5000 ms = 5 seconds;
 /*End Motion Detection*/
-/*Start 2 Way Light Switch*/ 
+/*Start 3 Way Light Switch*/ 
 	int lightSensorPin=9;
 	int lightSensorState=0; 
 	int currentLightState = 0;
 	unsigned long debounceLightDelay= 1000; //= 1 Second
 	unsigned long lastLightDebounce = 0;
-/*ENd 2 Way Light Switch*/
+/*ENd 3 Way Light Switch*/
 /*Start Buttons*/
   int buttonsPin = A0; //All the button run through ANALOG 0 
   int buttonFanState  = 0; //state of the Fan Button 
@@ -307,26 +307,17 @@ void SDCard(){
 void makeLogEntriesCrude(){ 
     // make a string for assembling the data to log:
     String dataString = "";    
-    dataString +=LEDFanState;
-    dataString += ",";
-    dataString +=LEDFan1State;
-    dataString += ",";
-    dataString +=LEDFan2State;
-    dataString += ",";
-    dataString +=LEDLightState;
-    dataString += ",";  
-    dataString +=!relayFanState; //When the relay is 0=LOW, Fan it is on. for the log 1 mean on, so I have to get the inverse
-	 
-	 int humidity = dht.readHumidity();
-	 dataString += ",";  
+		
+	 int humidity = dht.readHumidity(); 
+	 if(humidity>0){ 
 	 dataString +=humidity;
-	 
+	  }
 	 int temperature=dht.readTemperature();
 	 dataString += ",";  
 	 dataString +=temperature;
     // open the file. note that only one file can be open at a time,
     // so you have to close this one before opening another.
-    File dataFile = SD.open("crude.txt", FILE_WRITE); //datalog5MinutesCrude
+    File dataFile = SD.open("humtemp.txt", FILE_WRITE); //datalog5MinutesCrude
     // if the file is available, write to it:
     if (dataFile) {
       dataFile.println(dataString);
@@ -349,14 +340,15 @@ void makeLogEntriesPrecise(){
     dataString +=currentLightState;
     dataString += ",";  
     dataString +=!relayFanState; //When the relay is 0=LOW, Fan it is on. for the log 1 mean on, so I have to get the inverse
-	 
-	 int humidity = dht.readHumidity();
-	 dataString += ",";  
-	 dataString +=humidity;
-	 
-	 int temperature=dht.readTemperature();
-	 dataString += ",";  
-	 dataString +=temperature;
+	  
+		int humidity = dht.readHumidity();
+	 	dataString += ",";   
+	 	dataString +=humidity; 
+		
+	  int temperature=dht.readTemperature();
+	  dataString += ",";  
+	  dataString +=temperature;
+		
 	 // open the file. note that only one file can be open at a time,
 	 // so you have to close this one before opening another.
 	 File dataFile = SD.open("precise.txt", FILE_WRITE);
