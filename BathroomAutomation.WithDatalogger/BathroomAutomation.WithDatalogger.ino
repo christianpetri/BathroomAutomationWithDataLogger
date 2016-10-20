@@ -237,9 +237,10 @@ void button(){
      //Serial.println("buttonLight pressed");
      //changeLightState();
      //digitalWrite(LEDLightPin, currentLightState);
-     if(deactivateMotionDetection){
+     if(deactivateMotionDetection){ 
+				 //if light  was manually turned off,  turn deativateMotionDetection off and turn MotionDetection off
 				 deactivateMotionDetection=0;
-				 LEDLightState=0;
+				 LEDLightState=0; //turn LED on, inverse below
 		 }
      digitalWrite(LEDLightPin,LEDLightState=!LEDLightState);  
    
