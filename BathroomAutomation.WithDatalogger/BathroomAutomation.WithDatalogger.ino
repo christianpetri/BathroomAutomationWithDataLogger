@@ -372,13 +372,20 @@ void makeLogEntriesPrecise(){
 }
 
 void motionDetectionGeneral(){
+	 if(!digitalRead(lightSensorPin) && motionActive && debounceLightSensor()) { 
+			 //if the Light is turned off manually and motion is still active disable motion detection for 10 Seconds     
+			 digitalWrite(LEDLightPin, LEDLightState=1);
+			 lastTimeLightTurnedOffManually=millis();
+			 deactivateMotionDetection=1;	
+			 motionActive=0;	 
+	 }   
+	 if(millis()-lastTimeLightTurnedOffManually > deactivateMotionDetectionTimer && deactivateMotionDetection){
+			 deactivateMotionDetection=0;
+			 digitalWrite(LEDLightPin, LEDLightState=0);
+	 }
 	 if(!LEDLightState){ //if the Motion detection Auto is turned off, allow motion detection
-		   motionDetection();
+			 motionDetection();
 	 } 
-   if(millis()-lastTimeLightTurnedOffManually > deactivateMotionDetectionTimer && deactivateMotionDetection){
-    deactivateMotionDetection=0;
-    digitalWrite(LEDLightPin, LEDLightState=0);
-  }
 }
 void motionDetection(){ 
   if(digitalRead(motionDetectionPin)) { //if motion is detected, turn on light
@@ -392,14 +399,7 @@ void motionDetection(){
   } else{
     motionDetectionTimer= 180000; // 180000 ms = 3 Minutes
   }
-	
-	if(!digitalRead(lightSensorPin) && motionActive && debounceLightSensor()) { 
-		//if the Light is turned off manually and motion is still active disable motion detection for 10 Seconds     
-		digitalWrite(LEDLightPin, LEDLightState=1);
-		lastTimeLightTurnedOffManually=millis();
-		deactivateMotionDetection=1;	
-    motionActive=0;	 
-	}  
+	 
 	if(millis()-lastMotionDetectedTime > motionDetectionTimer && motionActive){
 		turnLightOff();
 		motionActive=0;
@@ -424,10 +424,10 @@ void turnLightOn(){
    if(!digitalRead(lightSensorPin)) { 
     //if the Light is off, find out what the current Light-Realy state is (0 or 1)
     //and turn the light on 
-    if(debounceLightSensor()){
-      digitalWrite(relayLightPin , relayLightState=!digitalRead(relayLightPin));
-      currentLightState=1;
-    } 
+      if(debounceLightSensor()){
+        digitalWrite(relayLightPin , relayLightState=!digitalRead(relayLightPin));
+        currentLightState=1;
+      } 
     lastLightDebounce = millis();
    }   
 }
@@ -435,10 +435,10 @@ void turnLightOff(){
    if(digitalRead(lightSensorPin)) { 
     //if the Light is on, find out what the current Light Realy state is (0 or 1)
     //and turn the light off 
-     if(debounceLightSensor()){
-      digitalWrite(relayLightPin , relayLightState=!digitalRead(relayLightPin));
-      currentLightState=0;
-    }
+      if(debounceLightSensor()){
+        digitalWrite(relayLightPin , relayLightState=!digitalRead(relayLightPin));
+        currentLightState=0;
+      }
     lastLightDebounce = millis();
    }  
 }
