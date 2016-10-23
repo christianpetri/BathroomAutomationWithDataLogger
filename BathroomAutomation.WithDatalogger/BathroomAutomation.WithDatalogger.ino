@@ -151,8 +151,8 @@ void setup() {  // put your setup code here, to run once:
 void loop() { // put your main code here, to run repeatedly: 
     button(); //check if buttons are pressed
     SDCard(); //write log data
-	 motionDetectionGeneral(); //check if it is enabled and turn the light on off accordingly
-	 fan();
+	 motionDetectionGeneral(); //check if it is enabled and turn the light On/Off accordingly
+	 fan(); //fan On/Off
 	 fanAutoOnOff(); //Check if FAN AUTO  is enabled and turn the fan on off accordingly 
    //readHumidityTemperature(); //Uncomment when you want to check if the temp and the humidity sensor is working
 }
@@ -333,26 +333,26 @@ void makeLogEntriesCrude(){
     }   
 }
 void makeLogEntriesPrecise(){ 
-	 // make a string for assembling the data to log:
+	 // make a string for assembling the data to log: Fan On/Off , Fan Auto , Fan Manual , Light On/Off, Fan State, Humidity , Temperature
     String dataString = "";    
-    dataString +=LEDFanState;
+    dataString +=LEDFanState; //Fan On/Off
     dataString += ",";
-    dataString +=LEDFan1State;
+    dataString +=LEDFan1State; //Fan Auto
     dataString += ",";
-    dataString +=LEDFan2State;
+    dataString +=LEDFan2State; //Fan Manual
     dataString += ",";
-    dataString +=currentLightState;
+    dataString +=digitalRead(lightSensorPin); //Light On/Off
     dataString += ",";  
-    dataString +=!relayFanState; //When the relay is 0=LOW, Fan it is on. for the log 1 mean on, so I have to get the inverse
-	  
-		int humidity = dht.readHumidity();
+    dataString +=!relayFanState; //When the relay is 0=LOW, Fan it is on. for the log 1 means on, so I have to get the inverse
+	  		
 	 	dataString += ",";   
+    int humidity = dht.readHumidity();
 	 	dataString +=humidity; 
-		
-	  int temperature=dht.readTemperature();
+	
 	  dataString += ",";  
-	  dataString +=temperature;
-		
+    int temperature=dht.readTemperature();
+	  dataString +=temperature; 
+    
 	 // open the file. note that only one file can be open at a time,
 	 // so you have to close this one before opening another.
 	 File dataFile = SD.open("precise.txt", FILE_WRITE);
@@ -443,8 +443,7 @@ int  debounceLightSensor(){
 		return 1;
 	} else{
 		return 0;
-	}
-    
+	} 
 }
 
 void fan(){
