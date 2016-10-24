@@ -22,6 +22,20 @@
 	unsigned long lastLogTimePrecise = 0; //Set last log time "" delayLogPresice
 	int active = 0; // is Button delay still active, (Butten pressed, button remains "active" for 10 Seconds)
 /*End  SD Card*/
+/*Start Ethernet*/
+  //#include <Dhcp.h>
+  //#include <Dns.h>
+  #include <Ethernet.h>
+  //#include <EthernetClient.h>
+  //#include <EthernetServer.h>
+  //#include <EthernetUdp.h> 
+  byte mac[] = { 0x00, 0xAA, 0xBB, 0xCC, 0xDE, 0x01 }; // RESERVED MAC ADDRESS
+  EthernetClient client;
+  String dataPost;
+  int LEDLanPin = A5;
+  int LEDLanState=0;
+  unsigned long lastTimePostSend = 0;
+/*End Ethernet*/
 /*Start Timer*/
   const long timerDelay = 3600000; // for how long the timer will run in MilliSeconds (3600000 ms = 1 Hour)
   unsigned long lastTimerTime = 0;   // will store last timer time
@@ -147,6 +161,13 @@ void setup() {  // put your setup code here, to run once:
   }else{
     //Serial.println(" card initialized."); 
   }  
+  //Ethernet
+  if (Ethernet.begin(mac) == 0) {
+    Serial.println("Failed to configure Ethernet using DHCP");
+  }
+  pinMode( LEDLanPin , OUTPUT);
+  digitalWrite(LEDLanPin, LEDLanState);
+  
 } 
 void loop() { // put your main code here, to run repeatedly: 
     button(); //check if buttons are pressed
@@ -155,6 +176,7 @@ void loop() { // put your main code here, to run repeatedly:
 	 fan(); //fan On/Off
 	 fanAutoOnOff(); //Check if FAN AUTO  is enabled and turn the fan on off accordingly 
    //readHumidityTemperature(); //Uncomment when you want to check if the temp and the humidity sensor is working
+   ethernetLog(); //send log to website
 }
 
 void button(){
@@ -317,8 +339,10 @@ void makeLogEntriesCrude(){
 	 dataString +=humidity;
 	  }
 	 int temperature=dht.readTemperature();
-	 dataString += ",";  
-	 dataString +=temperature;
+	 if(temperature>0){ 
+  	 dataString += ",";  
+  	 dataString +=temperature;
+	 }
     // open the file. note that only one file can be open at a time,
     // so you have to close this one before opening another.
     File dataFile = SD.open("humtemp.txt", FILE_WRITE); //datalog5MinutesCrude
@@ -327,7 +351,7 @@ void makeLogEntriesCrude(){
       dataFile.println(dataString);
       dataFile.close();
       // print to the serial port too:
-      Serial.println(dataString);
+      //Serial.println(dataString);
     } else { // if the file isn't open, pop up an error:
       Serial.println("No crude.txt present");
     }   
@@ -361,7 +385,7 @@ void makeLogEntriesPrecise(){
       dataFile.println(dataString);
       dataFile.close();
       // print to the serial port too:
-      Serial.println(dataString);
+      //Serial.println(dataString);
     } else { // if the file isn't open, pop up an error:
       Serial.println("No precise.txt present");
     } 
@@ -496,17 +520,45 @@ void readHumidityTemperature(){
   // Compute heat index in Celsius (isFahreheit = false)
   float hic = dht.computeHeatIndex(t, h, false);
 
-  Serial.print("Humidity: ");
+  Serial.print(F("Humidity: "));
   Serial.print(h);
-  Serial.print(" %\t");
-  Serial.print("Temperature: ");
+  Serial.print(F(" %\t"));
+  Serial.print(F("Temperature: "));
   Serial.print(t);
-  Serial.print(" *C ");
+  Serial.print(F(" *C "));
   Serial.print(f);
-  Serial.print(" *F\t");
-  Serial.print("Heat index: ");
+  Serial.print(F(" *F\t"));
+  Serial.print(F("Heat index: "));
   Serial.print(hic);
-  Serial.print(" *C ");
+  Serial.print(F(" *C "));
   Serial.print(hif);
-  Serial.println(" *F"); 
+  Serial.println(F(" *F")); 
+}
+void ethernetLog(){
+  if(millis()-lastTimePostSend > 5000){
+     lastTimePostSend=millis();
+  
+    dataPost = "temp1=";
+    dataPost += (int) dht.readTemperature();
+    dataPost += "&hum1=";
+    dataPost += (int) dht.readHumidity();
+    //Serial.println(data); 
+    if (client.connect("www.sensor.christianpetri.ch", 80)) { // REPLACE WITH YOUR SERVER ADDRESS
+      //Serial.println("connected");
+      client.println("POST /add.php HTTP/1.1");
+      client.println("Host: www.sensor.christianpetri.ch"); // SERVER ADDRESS HERE TOO
+      client.println("Content-Type: application/x-www-form-urlencoded");
+      client.print("Content-Length: ");
+      client.println(dataPost.length());
+      client.println();
+      client.print(dataPost);
+      digitalWrite(LEDLanPin, LEDLanState = !LEDLanState);
+    } else {
+      //Serial.print("Failed");
+    }
+  
+    if (client.connected()) {
+      client.stop();  // DISCONNECT FROM THE SERVER
+    } 
+  }  
 }
