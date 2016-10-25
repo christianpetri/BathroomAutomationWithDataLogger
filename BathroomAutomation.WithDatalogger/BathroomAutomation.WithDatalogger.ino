@@ -1,5 +1,4 @@
 /* Pins Used: A0 Buttons, A1-A5 LEDs, 2 Humidity/Temp Sensor, 4 SD Card, 5 6 7 Relay, 8 Motion, 9 Light Sensor, 11 12 13 Ethernet Shield*/
-#include <avr/pgmspace.h>
 /*Start SD Card*/
     /*SD card datalogger 
     * SD card attached to SPI bus as follows:
@@ -16,7 +15,7 @@
 
 	const char chipSelect = 4;  //The SD card uses Pin 4!
 
-	const PROGMEM  unsigned int delayLogCrude[] = {300000}; //Delay Log  Crude     300000ms    = 5     Minutes
+	const  unsigned int delayLogCrude = 300000; //Delay Log  Crude     300000ms    = 5     Minutes
 	const unsigned int delayLogPrecise =30000; //Delay Log Presice   30000ms     = 30    Seconds
 	unsigned long lastTimeButtonPressed = 0; //When was the button last pressed (milliseconds from last reset) 
 	unsigned long lastLogTimeCrude = 0; //Set last log time ""
@@ -37,7 +36,7 @@
   unsigned long lastTimePostSend = 0;
 /*End Ethernet*/
 /*Start Timer*/
-  const PROGMEM unsigned int timerDelay[] = {3600000}; // for how long the timer will run in MilliSeconds (3600000 ms = 1 Hour)
+  const unsigned int timerDelay = 3600000; // for how long the timer will run in MilliSeconds (3600000 ms = 1 Hour)
   unsigned long lastTimerTime = 0;   // will store last timer time
   boolean timerRunning = 0;  //check whether the  timer is running
 /*End Timer*/
@@ -548,8 +547,7 @@ void ethernetLog(){
       client.println();
       client.print(F("temp1="));
       client.print((int) dht.readTemperature());
-      client.print(F("&hum1="))
-      ;
+      client.print(F("&hum1="));
       client.print((int) dht.readHumidity()); 
       digitalWrite(LEDLanPin, LEDLanState = !LEDLanState);
     } else {
