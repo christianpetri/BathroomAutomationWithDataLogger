@@ -1,4 +1,5 @@
 /* Pins Used: A0 Buttons, A1-A5 LEDs, 2 Humidity/Temp Sensor, 4 SD Card, 5 6 7 Relay, 8 Motion, 9 Light Sensor, 11 12 13 Ethernet Shield*/
+#include <avr/pgmspace.h>
 /*Start SD Card*/
     /*SD card datalogger 
     * SD card attached to SPI bus as follows:
@@ -13,14 +14,14 @@
 	#include <SPI.h>
 	#include <SD.h>
 
-	const int chipSelect = 4;  //The SD card uses Pin 4!
+	const char chipSelect = 4;  //The SD card uses Pin 4!
 
-	unsigned long delayLogCrude =300000; //Delay Log  Crude     300000ms    = 5     Minutes
-	unsigned long delayLogPrecise =30000; //Delay Log Presice   30000ms     = 30    Seconds
+	const PROGMEM  unsigned int delayLogCrude[] = {300000}; //Delay Log  Crude     300000ms    = 5     Minutes
+	const unsigned int delayLogPrecise =30000; //Delay Log Presice   30000ms     = 30    Seconds
 	unsigned long lastTimeButtonPressed = 0; //When was the button last pressed (milliseconds from last reset) 
 	unsigned long lastLogTimeCrude = 0; //Set last log time ""
 	unsigned long lastLogTimePrecise = 0; //Set last log time "" delayLogPresice
-	int active = 0; // is Button delay still active, (Butten pressed, button remains "active" for 10 Seconds)
+	boolean active = 0; // is Button delay still active, (Butten pressed, button remains "active" for 10 Seconds)
 /*End  SD Card*/
 /*Start Ethernet*/
   #include <Dhcp.h>
@@ -29,17 +30,16 @@
   //#include <EthernetClient.h>
   //#include <EthernetServer.h>
   //#include <EthernetUdp.h> 
-  byte mac[] = { 0x00, 0xAA, 0xBB, 0xCC, 0xDE, 0x01 }; // RESERVED MAC ADDRESS
+  const byte mac[] = { 0x00, 0xAA, 0xBB, 0xCC, 0xDE, 0x01 }; // RESERVED MAC ADDRESS
   EthernetClient client;
-   
-  int LEDLanPin = A5;
-  int LEDLanState=0;
+  const char LEDLanPin = A5;
+  boolean LEDLanState=0;
   unsigned long lastTimePostSend = 0;
 /*End Ethernet*/
 /*Start Timer*/
-  const long timerDelay = 3600000; // for how long the timer will run in MilliSeconds (3600000 ms = 1 Hour)
+  const PROGMEM unsigned int timerDelay[] = {3600000}; // for how long the timer will run in MilliSeconds (3600000 ms = 1 Hour)
   unsigned long lastTimerTime = 0;   // will store last timer time
-  int timerRunning = 0;  //check whether the  timer is running
+  boolean timerRunning = 0;  //check whether the  timer is running
 /*End Timer*/
  /*START Humidity / Temperature*/
         // Example testing sketch for various DHT humidity/temperature sensors // Written by ladyada, public domain
@@ -65,26 +65,24 @@
   DHT dht(DHTPIN, DHTTYPE);
 /*END Humidity / Temperature*/ 
 /*Start Relay*/
-  int relayFanPin = 5; //define on what pin the fan relay is
-  int relayFanState = 1; //state of the fan relay. For the FAN relay LOW=On
+  const char relayFanPin = 5; //define on what pin the fan relay is
+  boolean relayFanState = 1; //state of the fan relay. For the FAN relay LOW=On
   
-  int relayFan1Pin = 6; //define on what pin the fan1 relay is
-  int relayFan1State = 1; //state of the fan1 relay. For the FAN relay LOW=On
+  const char relayFan1Pin = 6; //define on what pin the fan1 relay is
+  boolean relayFan1State = 1; //state of the fan1 relay. For the FAN relay LOW=On
    
-  int relayLightPin = 7; //define on what pin the light relay is
-  int relayLightState = 0; //state of the Light relay 
-
-  int state=0; //add reverse boolean function: For the FAN relay LOW=On
+  const char relayLightPin = 7; //define on what pin the light relay is
+  boolean relayLightState = 0; //state of the Light relay  
 /*End Relay*/
 /*Start Fan Auto */
-  int fanAuto=0; //Check if Fan Auto Mode is on or off (on= 1=true , off= 0=false)
-  int fanAutoRememberState=0;
-  int autoActive=0;
+  boolean fanAuto=0; //Check if Fan Auto Mode is on or off (on= 1=true , off= 0=false)
+  boolean fanAutoRememberState=0;
+  boolean  autoActive=0;
 /*End Fan Auto */
 /*Start Motion Detection*/
-	int motionDetectionPin=8; 
-	int motionDetectionState=0;
-	int motionActive=0;
+	const char motionDetectionPin=8; 
+	boolean motionDetectionState=0;
+	boolean motionActive=0;
 	unsigned long motionDetectionTimer=60000; //Timer before Light is turned off 180000 ms = 3 Minutes // 60000 ms = 1 Minute
 	unsigned long lastMotionDetectedTime = 0;
 	unsigned long lastTimeLightTurnedOffManually=0;
@@ -92,39 +90,38 @@
 	const unsigned int deactivateMotionDetectionTimer=5000; // 5000 ms = 5 seconds;
 /*End Motion Detection*/
 /*Start 3 Way Light Switch*/ 
-	int lightSensorPin=9;
+	const char lightSensorPin=9;
 	int lightSensorState=0; 
-	int currentLightState = 0;
 	const int debounceLightDelay= 1000; //= 1 Second
 	unsigned long lastLightDebounce = 0;
 /*ENd 3 Way Light Switch*/
 /*Start Buttons*/
-  int buttonsPin = A0; //All the button run through ANALOG 0 
-  int buttonFanState  = 0; //state of the Fan Button 
-  int buttonFan1State = 0; //state of the Fan1 Button 
-  int buttonFan2State = 0; //state of the Fan1 Button 
-  int buttonLampState = 0; //state of the Light Button
+  const char buttonsPin = A0; //All the button run through ANALOG 0 
+  boolean buttonFanState  = 0; //state of the Fan Button 
+  boolean buttonFan1State = 0; //state of the Fan1 Button 
+  boolean buttonFan2State = 0; //state of the Fan1 Button 
+  boolean buttonLampState = 0; //state of the Light Button
 /*End Buttons*/
 /*Start LED*/
-  int LEDFanPin = A1; //define on what pin the LED Fan is
-  int LEDFanState = 0; //state of LED Fan
+  const char LEDFanPin = A1; //define on what pin the LED Fan is
+  boolean LEDFanState = 0; //state of LED Fan
   
-  int LEDFan1Pin = A2; //define on what pin the LED Fan1 is
-  int LEDFan1State = 0; //state of LED Fan1
+  const char LEDFan1Pin = A2; //define on what pin the LED Fan1 is
+  boolean LEDFan1State = 0; //state of LED Fan1
 
-  int LEDFan2Pin = A3; //define on what pin the LED Fan1 is
-  int LEDFan2State = 0; //state of LED Fan2
+  const char LEDFan2Pin = A3; //define on what pin the LED Fan1 is
+  boolean LEDFan2State = 0; //state of LED Fan2
 
-  int LEDLightPin = A4; //define on what pin the LED Light  is
-  int LEDLightState = 0; //state of LED Light 
+  const char LEDLightPin = A4; //define on what pin the LED Light  is
+  boolean LEDLightState = 0; //state of LED Light 
 /*End LED*/
 /*Start debounce Button*/
   // Generally, you should use "unsigned long" for variables that hold time
   // The value will quickly become too large for an int to store
   unsigned long lastDebounceTime = 0;        // will store last time 
   // constants won't change :
-  const long debounceDelay = 200;           // interval of debounce (milliseconds)="delay"
-  int debounceReturn=0;
+  const unsigned char debounceDelay = 200;           // interval of debounce (milliseconds)="delay"
+  boolean debounceReturn=0;
 /*End debounce Button*/ 
 
 void setup() {  // put your setup code here, to run once:
@@ -170,8 +167,8 @@ void setup() {  // put your setup code here, to run once:
   
 } 
 void loop() { // put your main code here, to run repeatedly: 
-    button(); //check if buttons are pressed
-    SDCard(); //write log data
+   button(); //check if buttons are pressed
+   SDCard(); //write log data
 	 motionDetectionGeneral(); //check if it is enabled and turn the light On/Off accordingly
 	 fan(); //fan On/Off
 	 fanAutoOnOff(); //Check if FAN AUTO  is enabled and turn the fan on off accordingly 
@@ -254,11 +251,8 @@ void button(){
 
    //Button for the light in the room = Motionen Detection On/Off: LED=on=MD=off, LED=0ff=MD=on
    if (buttonLampState == HIGH && debounceReturn) {
-     lastDebounceTime = millis();
-     //Serial.println(currentLightState);
-     //Serial.println("buttonLight pressed");
-     //changeLightState();
-     //digitalWrite(LEDLightPin, currentLightState);
+     lastDebounceTime = millis(); 
+     //Serial.println("buttonLight pressed"); 
      if(deactivateMotionDetection){ 
 				 //if light  was manually turned off,  turn deativateMotionDetection off and turn MotionDetection off
 				 deactivateMotionDetection=0;
@@ -332,7 +326,8 @@ void SDCard(){
 } 
 void makeLogEntriesCrude(){ 
     // make a string for assembling the data to log:
-    String dataString = "";    
+    /*
+    dataString = "";    
 		
 	 int humidity = dht.readHumidity(); 
 	 if(humidity>0){ 
@@ -343,12 +338,21 @@ void makeLogEntriesCrude(){
   	 dataString += ",";  
   	 dataString +=temperature;
 	 }
+   */
     // open the file. note that only one file can be open at a time,
     // so you have to close this one before opening another.
     File dataFile = SD.open("humtemp.txt", FILE_WRITE); //datalog5MinutesCrude
     // if the file is available, write to it:
     if (dataFile) {
-      dataFile.println(dataString);
+      //dataFile.println(dataString);
+      if( (int) dht.readHumidity()>0){ 
+        dataFile.print( (int) dht.readHumidity());
+      }
+      dataFile.print(",");
+      if( (int) dht.readTemperature()>0){ 
+        dataFile.print(( int) dht.readTemperature());
+      }
+      dataFile.println();
       dataFile.close();
       // print to the serial port too:
       //Serial.println(dataString);
@@ -358,7 +362,8 @@ void makeLogEntriesCrude(){
 }
 void makeLogEntriesPrecise(){ 
 	 // make a string for assembling the data to log: Fan On/Off , Fan Auto , Fan Manual , Light On/Off, Fan State, Humidity , Temperature
-    String dataString = "";    
+    /*
+    dataString = "";    
     dataString +=LEDFanState; //Fan On/Off
     dataString += ",";
     dataString +=LEDFan1State; //Fan Auto
@@ -368,7 +373,7 @@ void makeLogEntriesPrecise(){
     dataString +=digitalRead(lightSensorPin); //Light On/Off
     dataString += ",";  
     dataString +=!relayFanState; //When the relay is 0=LOW, Fan it is on. for the log 1 means on, so I have to get the inverse
-	  		
+	
 	 	dataString += ",";   
     int humidity = dht.readHumidity();
 	 	dataString +=humidity; 
@@ -376,13 +381,27 @@ void makeLogEntriesPrecise(){
 	  dataString += ",";  
     int temperature=dht.readTemperature();
 	  dataString +=temperature; 
-    
+      */    
 	 // open the file. note that only one file can be open at a time,
 	 // so you have to close this one before opening another.
 	 File dataFile = SD.open("precise.txt", FILE_WRITE);
 	 // if the file is available, write to it:
     if (dataFile) {
-      dataFile.println(dataString);
+      //dataFile.println(dataString);
+      dataFile.print(LEDFanState);
+      dataFile.print(",");
+      dataFile.print(LEDFan1State);
+      dataFile.print(",");
+      dataFile.print(LEDFan2State);
+      dataFile.print(",");
+      dataFile.print(digitalRead(lightSensorPin));
+      dataFile.print(",");
+      dataFile.print(!relayFanState);
+      dataFile.print(",");
+      dataFile.print( (int) dht.readHumidity());
+      dataFile.print(",");
+      dataFile.print(( int) dht.readTemperature());
+      dataFile.println();
       dataFile.close();
       // print to the serial port too:
       //Serial.println(dataString);
@@ -424,29 +443,13 @@ void motionDetection(){
 		turnLightOff();
 		motionActive=0;
 	}  
-}
-void changeLightState(){
-	 //if the Light is on, find out what the current Light Realy state is (0 or 1)
-    //and turn the light off 
-	 //if the Light is off, find out what the current Light-Realy state is (0 or 1)
-    //and turn the light on  
-    if(digitalRead(lightSensorPin)) {  
-		currentLightState=0; 
-   } else { 
-		currentLightState=1;  
-   }
-	if(debounceLightSensor()){ 
-		digitalWrite(relayLightPin , relayLightState=!digitalRead(relayLightPin));
-	}
- 	lastLightDebounce = millis();
-}
+} 
 void turnLightOn(){ 
    if(!digitalRead(lightSensorPin)) { 
     //if the Light is off, find out what the current Light-Realy state is (0 or 1)
     //and turn the light on 
       if(debounceLightSensor()){
-        digitalWrite(relayLightPin , relayLightState=!digitalRead(relayLightPin));
-        currentLightState=1;
+        digitalWrite(relayLightPin , relayLightState=!digitalRead(relayLightPin)); 
       } 
     lastLightDebounce = millis();
    }   
@@ -456,8 +459,7 @@ void turnLightOff(){
     //if the Light is on, find out what the current Light Realy state is (0 or 1)
     //and turn the light off 
       if(debounceLightSensor()){
-        digitalWrite(relayLightPin , relayLightState=!digitalRead(relayLightPin));
-        currentLightState=0;
+        digitalWrite(relayLightPin , relayLightState=!digitalRead(relayLightPin)); 
       }
     lastLightDebounce = millis();
    }  
@@ -499,26 +501,24 @@ void sensor(){
     } 
  }
 
-void readHumidityTemperature(){
-   
+void readHumidityTemperature(){ 
   // Reading temperature or humidity takes about 250 milliseconds!
   // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
-  float h = dht.readHumidity();
+  int h = dht.readHumidity();
   // Read temperature as Celsius (the default)
   float t = dht.readTemperature();
   // Read temperature as Fahrenheit (isFahrenheit = true)
-  float f = dht.readTemperature(true);
+  int f = dht.readTemperature(true);
 
   // Check if any reads failed and exit early (to try again).
   if (isnan(h) || isnan(t) || isnan(f)) {
     Serial.println("Failed to read from DHT sensor!");
     return;
-  }
-
+  } 
   // Compute heat index in Fahrenheit (the default)
-  float hif = dht.computeHeatIndex(f, h);
+  int hif = dht.computeHeatIndex(f, h);
   // Compute heat index in Celsius (isFahreheit = false)
-  float hic = dht.computeHeatIndex(t, h, false);
+  int hic = dht.computeHeatIndex(t, h, false);
 
   Serial.print(F("Humidity: "));
   Serial.print(h);
@@ -540,15 +540,16 @@ void ethernetLog(){
    
     if (client.connect("www.sensor.christianpetri.ch", 80)) { // REPLACE WITH YOUR SERVER ADDRESS
       //Serial.println("connected");
-      client.println("POST /add.php HTTP/1.1");
-      client.println("Host: www.sensor.christianpetri.ch"); // SERVER ADDRESS HERE TOO
-      client.println("Content-Type: application/x-www-form-urlencoded");
-      client.print("Content-Length: ");
-      client.println("25");
+      client.println(F("POST /add.php HTTP/1.1"));
+      client.println(F("Host: www.sensor.christianpetri.ch")); // SERVER ADDRESS HERE TOO
+      client.println(F("Content-Type: application/x-www-form-urlencoded"));
+      client.print(F("Content-Length: "));
+      client.println(F("25")); //oct 16+5=21 Zeichen
       client.println();
-      client.print("temp1=");
+      client.print(F("temp1="));
       client.print((int) dht.readTemperature());
-      client.print("&hum1=");
+      client.print(F("&hum1="))
+      ;
       client.print((int) dht.readHumidity()); 
       digitalWrite(LEDLanPin, LEDLanState = !LEDLanState);
     } else {
