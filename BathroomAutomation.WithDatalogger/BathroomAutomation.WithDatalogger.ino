@@ -23,7 +23,7 @@
 	int active = 0; // is Button delay still active, (Butten pressed, button remains "active" for 10 Seconds)
 /*End  SD Card*/
 /*Start Ethernet*/
-  //#include <Dhcp.h>
+  #include <Dhcp.h>
   //#include <Dns.h>
   #include <Ethernet.h>
   //#include <EthernetClient.h>
@@ -31,7 +31,7 @@
   //#include <EthernetUdp.h> 
   byte mac[] = { 0x00, 0xAA, 0xBB, 0xCC, 0xDE, 0x01 }; // RESERVED MAC ADDRESS
   EthernetClient client;
-  String dataPost;
+   
   int LEDLanPin = A5;
   int LEDLanState=0;
   unsigned long lastTimePostSend = 0;
@@ -89,13 +89,13 @@
 	unsigned long lastMotionDetectedTime = 0;
 	unsigned long lastTimeLightTurnedOffManually=0;
 	int deactivateMotionDetection=0;
-	unsigned int deactivateMotionDetectionTimer=5000; // 5000 ms = 5 seconds;
+	const unsigned int deactivateMotionDetectionTimer=5000; // 5000 ms = 5 seconds;
 /*End Motion Detection*/
 /*Start 3 Way Light Switch*/ 
 	int lightSensorPin=9;
 	int lightSensorState=0; 
 	int currentLightState = 0;
-	unsigned long debounceLightDelay= 1000; //= 1 Second
+	const int debounceLightDelay= 1000; //= 1 Second
 	unsigned long lastLightDebounce = 0;
 /*ENd 3 Way Light Switch*/
 /*Start Buttons*/
@@ -536,22 +536,20 @@ void readHumidityTemperature(){
 }
 void ethernetLog(){
   if(millis()-lastTimePostSend > 5000){
-     lastTimePostSend=millis();
-  
-    dataPost = "temp1=";
-    dataPost += (int) dht.readTemperature();
-    dataPost += "&hum1=";
-    dataPost += (int) dht.readHumidity();
-    //Serial.println(data); 
+     lastTimePostSend=millis(); 
+   
     if (client.connect("www.sensor.christianpetri.ch", 80)) { // REPLACE WITH YOUR SERVER ADDRESS
       //Serial.println("connected");
       client.println("POST /add.php HTTP/1.1");
       client.println("Host: www.sensor.christianpetri.ch"); // SERVER ADDRESS HERE TOO
       client.println("Content-Type: application/x-www-form-urlencoded");
       client.print("Content-Length: ");
-      client.println(dataPost.length());
+      client.println("25");
       client.println();
-      client.print(dataPost);
+      client.print("temp1=");
+      client.print((int) dht.readTemperature());
+      client.print("&hum1=");
+      client.print((int) dht.readHumidity()); 
       digitalWrite(LEDLanPin, LEDLanState = !LEDLanState);
     } else {
       //Serial.print("Failed");
