@@ -251,7 +251,7 @@ void buttonPressed(){
 }
 
 void motionDetectionGeneral(){
-   if(!digitalRead(lightSensorPin) && motionActive && debounceLightSensor()) {
+   if(!digitalRead(lightSensorPin) && motionActive && debounceLightSensor() && !LEDLightState) {
        //if the Light is turned off manually and motion is still active disable motion detection for 10 Seconds
        digitalWrite(LEDLightPin, LEDLightState=1);
        lastTimeLightTurnedOffManually=millis();
