@@ -1,6 +1,6 @@
 /* Pins Used: A0 Buttons, A1-A5 LEDs, 2 Humidity/Temp Sensor, 5 6 7 Relay, 8 Motion, 9 Light Sensor */
-/*Start Timer*/
-  const unsigned int timerDelay = 3600000; // for how long the timer will run in MilliSeconds (3600000 ms = 1 Hour)
+/*Start Timer Fan*/
+  const unsigned long timerDelay = 180000; // for how long the timer will run in MilliSeconds (3600000 ms = 1 Hour)
   unsigned long lastTimerTime = 0;   // will store last timer time
   boolean timerRunning = 0;  //check whether the  timer is running or not
 /*End Timer*/
@@ -195,7 +195,7 @@ void button(){
      }
    }
 
-   //Button for the light in the room = Motionen Detection On/Off: LED=on=MD=off, LED=0ff=MD=on
+   //Button for the light in the room = Motionen Detection On/Off: LED=on=Motionen Detection=off, LED=0ff=Motionen Detection=on
    if (buttonLampState == HIGH && debounceReturn) {
      lastDebounceTime = millis();
      //Serial.println("buttonLight pressed");
@@ -314,6 +314,11 @@ int  debounceLightSensor(){
 
 void fan(){
   if(timerRunning){ //Fan is on for "timerDelay" time
+      /*
+      Serial.print(millis()-lastTimerTime);
+      Serial.print("   TimerRunning. "); 
+      Serial.println(timerDelay);
+      */
       if(millis()-lastTimerTime >= timerDelay){ //when timer has finished. Turn off Fan
         digitalWrite(relayFanPin,relayFanState=1);
         digitalWrite(relayFan1Pin,relayFan1State=0);
