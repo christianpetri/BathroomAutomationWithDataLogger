@@ -1,4 +1,37 @@
-/* Pins Used: A0 Buttons, A1-A5 LEDs, 2 Humidity/Temp Sensor, 5 6 7 Relay, 8 Motion, 9 Light Sensor */
+/* Pins Used: A0 Buttons, A1-A5 LEDs, 2 Humidity/Temp Sensor, 5 6 7 Relay, 8 Motion, 9 Light Sensor, SD Card 4 11 12 13*/
+
+  
+
+
+#define SDcardActive // Enable SD CARD HERE // SDcardActive or else write  SDcardNOTActive     
+
+#ifdef SDcardActive
+    
+      /*Start SD Card*/
+    /*SD card datalogger 
+    * SD card attached to SPI bus as follows: 
+    ** MOSI - pin 11
+    ** MISO - pin 12
+    ** CLK - pin 13
+    ** CS - pin 4
+    created  24 Nov 2010 modified 9 Apr 2012 by Tom Igoe
+    This example code is in the public domain.
+    */
+
+  #include <SPI.h>
+  #include <SD.h>
+
+  const char chipSelect = 4;  //The SD card uses Pin 4!
+
+  const  unsigned int delayLogCrude = 300000; //Delay Log  Crude     300000ms    = 5     Minutes
+  const unsigned int delayLogPrecise =30000; //Delay Log Presice   30000ms     = 30    Seconds
+  unsigned long lastTimeButtonPressed = 0; //When was the button last pressed (milliseconds from last reset) 
+  unsigned long lastLogTimeCrude = 0; //Set last log time ""
+  unsigned long lastLogTimePrecise = 0; //Set last log time "" delayLogPresice
+  boolean active = 0; // is Button delay still active, (Butten pressed, button remains "active" for 10 Seconds)
+/*End  SD Card*/ 
+#endif
+ 
 /*Start Timer Fan*/
   const unsigned long timerDelay = 180000; // for how long the timer will run in MilliSeconds (3600000 ms = 1 Hour)
   unsigned long lastTimerTime = 0;   // will store last timer time
@@ -85,8 +118,8 @@
   // constants won't change :
   const unsigned char debounceDelay = 200;           // interval of debounce (milliseconds)="delay"
   boolean debounceReturn=0;
-  unsigned long lastTimeButtonPressed = 0; //When was the button last pressed (milliseconds from last reset)
-/*End debounce Button*/
+  /*End debounce Button*/
+ 
 void setup() {  // put your setup code here, to run once:
   Serial.begin(9600);
   dht.begin(); //init the Humidity / Temperature sensor
@@ -111,7 +144,18 @@ void setup() {  // put your setup code here, to run once:
   pinMode(LEDFan1Pin, OUTPUT);
   pinMode(LEDFan2Pin, OUTPUT);
      digitalWrite(LEDFan2Pin,LEDFan2State);
-  pinMode(LEDLightPin, OUTPUT);
+  pinMode(LEDLightPin, OUTPUT); 
+  //SD Card
+  #ifdef SDcardActive 
+    //SD Card
+    // Serial.print("Initializing SD card...");
+    // see if the card is present and can be initialized:
+    if (!SD.begin(chipSelect)) {
+      Serial.println("Card failed, or not present");
+    }else{
+      Serial.println(" card initialized."); 
+    }  
+  #endif
 }
 void loop() { // put your main code here, to run repeatedly:
    button(); //check if buttons are pressed
@@ -119,6 +163,9 @@ void loop() { // put your main code here, to run repeatedly:
    fan(); //fan On/Off
    fanAutoOnOff(); //Check if FAN AUTO  is enabled and turn the fan on off accordingly
    //readHumidityTemperature(); //Uncomment when you want to check if the temp and the humidity sensor is working
+   #ifdef SDcardActive
+    SDCardLogging();
+  #endif
 
 }
 
@@ -247,8 +294,120 @@ int  getButtonState(){
   }
 }
 void buttonPressed(){
-  lastTimeButtonPressed=millis();
+  #ifdef SDcardActive
+    lastTimeButtonPressed=millis();
+    active = 1;
+  #endif 
+  
 }
+
+//SDCard Start
+#ifdef SDcardActive
+  void SDCardLogging(){
+   //make Log entry after button is pressed
+    if(active && ((millis()-lastTimeButtonPressed) > 150)){ //=0.15 Seconds 
+      makeLogEntriesPrecise();
+      makeLogEntriesPrecise();  
+      active=0;
+    }  
+   //make a Precise Log entry
+    if(millis()-lastLogTimePrecise > delayLogPrecise){  
+       lastLogTimePrecise=millis();
+     makeLogEntriesPrecise();
+    } 
+    //make a Crude Log entry
+    if((millis()-lastLogTimeCrude) > delayLogCrude) {
+        lastLogTimeCrude=millis(); 
+        makeLogEntriesCrude();
+    }    
+} 
+void makeLogEntriesCrude(){ 
+    // make a string for assembling the data to log:
+    /*
+    dataString = "";    
+    
+   int humidity = dht.readHumidity(); 
+   if(humidity>0){ 
+   dataString +=humidity;
+    }
+   int temperature=dht.readTemperature();
+   if(temperature>0){ 
+     dataString += ",";  
+     dataString +=temperature;
+   }
+   */
+    // open the file. note that only one file can be open at a time,
+    // so you have to close this one before opening another.
+    File dataFile = SD.open("humtemp.txt", FILE_WRITE); //datalog5MinutesCrude
+    // if the file is available, write to it:
+    if (dataFile) {
+      //dataFile.println(dataString);
+      if( (int) dht.readHumidity()>0){ 
+        dataFile.print( (int) dht.readHumidity());
+      }
+      dataFile.print(",");
+      if( (int) dht.readTemperature()>0){ 
+        dataFile.print(( int) dht.readTemperature());
+      }
+      dataFile.println();
+      dataFile.close();
+      // print to the serial port too:
+      //Serial.println(dataString);
+    } else { // if the file isn't open, pop up an error:
+      Serial.println("No crude.txt present");
+    }   
+}
+void makeLogEntriesPrecise(){ 
+   // make a string for assembling the data to log: Fan On/Off , Fan Auto , Fan Manual , Light On/Off, Fan State, Humidity , Temperature
+    /*
+    dataString = "";    
+    dataString +=LEDFanState; //Fan On/Off
+    dataString += ",";
+    dataString +=LEDFan1State; //Fan Auto
+    dataString += ",";
+    dataString +=LEDFan2State; //Fan Manual
+    dataString += ",";
+    dataString +=digitalRead(lightSensorPin); //Light On/Off
+    dataString += ",";  
+    dataString +=!relayFanState; //When the relay is 0=LOW, Fan it is on. for the log 1 means on, so I have to get the inverse
+  
+    dataString += ",";   
+    int humidity = dht.readHumidity();
+    dataString +=humidity; 
+  
+    dataString += ",";  
+    int temperature=dht.readTemperature();
+    dataString +=temperature; 
+      */    
+   // open the file. note that only one file can be open at a time,
+   // so you have to close this one before opening another.
+   File dataFile = SD.open("precise.txt", FILE_WRITE);
+   // if the file is available, write to it:
+    if (dataFile) {
+      //dataFile.println(dataString);
+      dataFile.print(LEDFanState);
+      dataFile.print(",");
+      dataFile.print(LEDFan1State);
+      dataFile.print(",");
+      dataFile.print(LEDFan2State);
+      dataFile.print(",");
+      dataFile.print(digitalRead(lightSensorPin));
+      dataFile.print(",");
+      dataFile.print(!relayFanState);
+      dataFile.print(",");
+      dataFile.print( (int) dht.readHumidity());
+      dataFile.print(",");
+      dataFile.print(( int) dht.readTemperature());
+      dataFile.println();
+      dataFile.close();
+      // print to the serial port too:
+      //Serial.println(dataString);
+    } else { // if the file isn't open, pop up an error:
+      Serial.println("No precise.txt present");
+    } 
+}
+#endif
+//SDCard End
 
 void motionDetectionGeneral(){
    if(!digitalRead(lightSensorPin) && motionActive && debounceLightSensor() && !LEDLightState) {
@@ -377,3 +536,4 @@ void readHumidityTemperature(){
   Serial.print(hif);
   Serial.println(F(" *F"));
 }
+
