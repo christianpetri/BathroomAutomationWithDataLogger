@@ -68,7 +68,7 @@ void setup(void)
 
   // Connect to WiFi network
   WiFi.begin(ssid, password);
-  Serial.print("\n\r \n\rWorking to connect");
+  Serial.print("\n\r \n\rWorking to re-connect");
 
   // Wait for connection
   while (WiFi.status() != WL_CONNECTED) {
@@ -106,14 +106,14 @@ void loop(void)
   server.handleClient();
   thisMillis = millis();
   if (WiFi.status() != WL_CONNECTED) { 
-      Serial.print("\n\r \n\rWorking to connect");
+      Serial.print("\n\r \n\rWorking to (re-) connect");
       WiFi.begin(ssid, password); 
       int connectLoop = 0;
       while (WiFi.status() != WL_CONNECTED) {
         delay(500);
         Serial.print(".");
         connectLoop++;
-        if(connectLoop > 10000)
+        if(connectLoop > 300)
         {
          Serial.print("Try again"); 
          break;
