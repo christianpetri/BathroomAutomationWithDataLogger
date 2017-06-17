@@ -1,7 +1,7 @@
 <?php
  	 date_default_timezone_set('Europe/London');
     include("connect.php");
-    $result = $DB->getResults("SELECT * FROM `tempLog` WHERE `timeStamp` >= (now() - INTERVAL 1 DAY) ORDER BY `timeStamp` DESC LIMIT 2000");
+    $result = $DB->getResults("SELECT * FROM `tempLog` ORDER BY `timeStamp` DESC");
    //echo print_r($result);
 ?>
 
@@ -22,7 +22,6 @@
                margin:auto;
                background-color: white;
            }
-            
             table.result {
                 border-collapse: collapse;
             }
@@ -37,33 +36,14 @@
             }
        
        </style>
-		<script type="text/javascript">
-			var timeout;
-			$(document).ready(function () {
-			  startReload(); //NEW PART
-			  $("#siteloader").html('<object data="https:/sensor.christianpetri.ch"/>');
-			});
-
-			function stopReload() {
-			  clearTimeout(timeout);
-				$("#onORoff").empty();
-			 	$("#onORoff").append("OFF");
-			}
-			function startReload() {
-			  timeout = setTimeout(function() { window.location.reload(); }, 5000); // 5 seconds, e.g.
-				$("#onORoff").empty();
-			 	$("#onORoff").append("ON");
-				
-			}
-
-		</script> 
+      
    </head>
-<body> 
-      <h1>Temperature / Humidity sensor readings (last 24 hours)</h1>
-      <a href="/result.php">See all logged data</a>
-	<div>The website automatically updates  every 5 seconds	<button onclick="stopReload();">Stop it</button> <button onclick="startReload();">Start it</button> Refresh: <span style="color:red;t" id="onORoff"> ON</span> </div>
+<body>
+   <h1>Temperature / Humidity sensor readings</h1>
+    <a href="/">Live data</a>
+    <p>You can pan (right click and hold) and zoom (mouse-wheel) with your mouse</p>
 <?php
-   //<meta http-equiv="refresh" content="5" >
+   
 $value= array();
 foreach ($result as $key => $val) {
      // $timestamp =  strtotime($result[$key]['timeStamp']);
@@ -99,16 +79,41 @@ $.plot($("#placeholder"),
 			{label: "Humidity", data: [  <?php echo $returnResults; ?> ]},
 		  	{ label: "Temperature", data: [  <?php echo $returnTempResults; ?> ] }
 		 ], 
-		 { yaxis: { max: 100 },
-		   xaxis: { mode: 'time',  timeformat: '%d.%m.%Y %H:%M' },
+		 { yaxis: { max: 100, zoomRange: false, panRange: false },
+		   xaxis: { mode: 'time',  timeformat: '%d.%m.%Y %H:%M:%S',zoomRange: [null, new Date()], panRange: [null, new Date()] },
 		 	series: { lines: { show: true }, points: { show: false } },
 		  	legend: { show: true },
+			zoom: {
+				interactive: true
+			},
+			pan: {
+				interactive: true,
+				cursor: "move"
+			}
+		  /*	
+		  zoom: {
+				interactive: true
+				trigger: "dblclick" // or "click" for single click
+				amount: 1.5         // 2 = 200% (zoom in), 0.5 = 50% (zoom out)
+			} 
+		  
+			pan: {
+				interactive: true
+				cursor: "move"      // CSS mouse cursor value used when dragging, e.g. "pointer"
+				frameRate: 20
+			}
+ 	/*
+	xaxis, yaxis, x2axis, y2axis: {
+		zoomRange: null  // or [ number, number ] (min range, max range) or false
+		panRange: null   // or [ number, number ] (min, max) or false
+	}
+	*/   
 		  	 
 		 });     
 });
 </script>	
 <div id="placeholder" style="width:1000px;height:300px"></div>    
-    </br>
+</br>
 <?php
     
      $result = $DB->getResults("SELECT * FROM `tempLog` ORDER BY `timeStamp` DESC LIMIT 10");
