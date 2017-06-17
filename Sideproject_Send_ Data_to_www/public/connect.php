@@ -1,21 +1,22 @@
 <?php
 class HandelDB
 {
-    private $servername="";
-    private $username="";
-    private $password="";
-    private $db="";
-
+    private $ini = array();
+    
     private function connectToDB()
     {
+        $this->ini = parse_ini_file('../.ini'); 
+        //print_r($this->ini);
         try {
-            $this->conn = new PDO("mysql:host=$this->servername;dbname=$this->db", $this->username, $this->password);
+            
+            $this->conn = new PDO("mysql:host={$this->ini['servername']};dbname={$this->ini['db']}",$this->ini['username'],$this->ini['password']);
             // set the PDO error mode to exception
             $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             //echo "Connected successfully";
         } catch (PDOException $e) {
                 echo "Connection failed: " . $e->getMessage();
         }
+         $this->ini = "";
     }
     
     private function select($sql)
