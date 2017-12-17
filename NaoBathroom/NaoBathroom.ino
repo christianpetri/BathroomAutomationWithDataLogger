@@ -1,12 +1,9 @@
 /* Pins Used: A0 Buttons, A1-A5 LEDs, 2 Humidity/Temp Sensor, 5 6 7 Relay, 8 Motion, 9 Light Sensor, SD Card 4 11 12 13*/
+ 
+//#define SDcardActive // Enable SD CARD HERE // SDcardActive or else write  SDcardNOTActive     
+#undef SDcardActive //Disable SD card
 
-  
-
-
-#define SDcardActive // Enable SD CARD HERE // SDcardActive or else write  SDcardNOTActive     
-
-#ifdef SDcardActive
-    
+#ifdef SDcardActive 
       /*Start SD Card*/
     /*SD card datalogger 
     * SD card attached to SPI bus as follows: 
@@ -143,8 +140,9 @@ void setup() {  // put your setup code here, to run once:
   pinMode(LEDFanPin, OUTPUT);
   pinMode(LEDFan1Pin, OUTPUT);
   pinMode(LEDFan2Pin, OUTPUT);
-     digitalWrite(LEDFan2Pin,LEDFan2State);
+  digitalWrite(LEDFan2Pin,LEDFan2State);
   pinMode(LEDLightPin, OUTPUT); 
+
   //SD Card
   #ifdef SDcardActive 
     //SD Card
@@ -165,7 +163,7 @@ void loop() { // put your main code here, to run repeatedly:
    //readHumidityTemperature(); //Uncomment when you want to check if the temp and the humidity sensor is working
    #ifdef SDcardActive
     SDCardLogging();
-  #endif
+#endif
 
 }
 
@@ -264,7 +262,7 @@ int  debounce(){
 int  getButtonState(){
    //Read the Analog value from the resistor ladder and determine what button was pushed
   int value= analogRead(A0);
-  //Serial.println (value);
+  Serial.println (value);
   if(value<=1024  &&  value >=1013){
      buttonLampState=HIGH;
      buttonPressed();
@@ -286,7 +284,7 @@ int  getButtonState(){
      buttonFan1State=LOW;
   }
 
-   if(value >= 240 && value <= 260){
+   if(value >= 240 && value <= 270){ 
      buttonFanState=HIGH;
      buttonPressed();
   } else {
@@ -297,8 +295,7 @@ void buttonPressed(){
   #ifdef SDcardActive
     lastTimeButtonPressed=millis();
     active = 1;
-  #endif 
-  
+  #endif  
 }
 
 //SDCard Start
