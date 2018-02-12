@@ -1,6 +1,6 @@
-C:\Users\Christian\AppData\Local\Temp\VMBuilds\NaoBathroom\nano_atmega328\Release\NaoBathroom.cpp.o: \
- C:\Users\Christian\AppData\Local\Temp\VMBuilds\NaoBathroom\nano_atmega328\Release\NaoBathroom.cpp \
- C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\cores\arduino/Arduino.h \
+C:\Users\-\AppData\Local\Temp\VMBuilds\NaoBathroom\nano_atmega328\Release\NaoBathroom.cpp.o: \
+ C:\Users\-\AppData\Local\Temp\VMBuilds\NaoBathroom\nano_atmega328\Release\NaoBathroom.cpp \
+ C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\cores\arduino/arduino.h \
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\cores\arduino/binary.h \
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\cores\arduino/WCharacter.h \
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\cores\arduino/WString.h \
@@ -12,4 +12,5 @@ C:\Users\Christian\AppData\Local\Temp\VMBuilds\NaoBathroom\nano_atmega328\Releas
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\cores\arduino/Arduino.h \
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\variants\eightanaloginputs/pins_arduino.h \
  C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\variants\eightanaloginputs/../standard/pins_arduino.h \
- C:\Users\Christian\Documents\Arduino\libraries\DHT_sensor_library/DHT.h
+ C:\Users\-\Documents\Arduino\libraries\DHT_sensor_library/DHT.h \
+ C:\Program\ Files\ (x86)\Arduino\hardware\arduino\avr\cores\arduino/Arduino.h

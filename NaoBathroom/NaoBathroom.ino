@@ -1,4 +1,4 @@
-/* Pins Used: A0 Buttons, A1-A5 LEDs, 2 Humidity/Temp Sensor, 5 6 7 Relay, 8 Motion, 9 Light Sensor, SD Card 4 11 12 13*/
+/* Pins Used: A0 Buttons, A1-A5 LEDs, 2 Humidity/Temp Sensor, 5 6 7 Relay, 8 Motion PIR, 9 Light Sensor, 10 Motion Microwave, SD Card 4 11 12 13*/
  
 //#define SDcardActive // Enable SD CARD HERE // SDcardActive or else write  SDcardNOTActive     
 #undef SDcardActive //Disable SD card
@@ -72,8 +72,8 @@
   boolean fanAutoRememberState = 0;
   boolean  autoActive = 0;
 /*End Fan Auto */
-/*Start Motion Detection*/
-  #define motionDetectionPin 8
+/*Start Motion Detection PIR*/
+  #define motionDetectionPIRPin 8 //on what Pin the PIR Sensor is
   boolean motionDetectionState = 0;
   boolean motionActive = 0;
   unsigned long motionDetectionTimer = 60000; //Timer before Light is turned off 180000 ms = 3 Minutes // 60000 ms = 1 Minute
@@ -81,6 +81,9 @@
   unsigned long lastTimeLightTurnedOffManually=0;
   int deactivateMotionDetection=0;
   const unsigned int deactivateMotionDetectionTimer=5000; // 5000 ms = 5 seconds;
+/*End Motion Detection*/
+/*Start Motion Detection Microwave*/
+	#define motionDetectionMicrowavePin 10
 /*End Motion Detection*/
 /*Start 3 Way Light Switch*/
   #define lightSensorPin 9
@@ -132,6 +135,10 @@ void setup() {  // put your setup code here, to run once:
 
   //buttons
   pinMode(buttonsPin, INPUT);
+
+  //Motion Decection
+  pinMode(motionDetectionPIRPin, INPUT);
+  pinMode(motionDetectionMicrowavePin, INPUT);
 
   //photoresistor
   pinMode(lightSensorPin, INPUT);
@@ -423,7 +430,7 @@ void motionDetectionGeneral(){
    }
 }
 void motionDetection(){
-  if(digitalRead(motionDetectionPin)) { //if motion is detected, turn on light
+  if(digitalRead(motionDetectionPIRPin) || digitalRead(motionDetectionMicrowavePin)) { //if motion is detected, turn on light
     turnLightOn();
     lastMotionDetectedTime=millis();  //reset the timer
     //Serial.println("Moition detected");
