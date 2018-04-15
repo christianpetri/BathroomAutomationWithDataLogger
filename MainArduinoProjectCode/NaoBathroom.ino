@@ -1,6 +1,6 @@
-/* Pins Used: A0 Buttons, A1-A5 LEDs, 2 Humidity/Temp Sensor, 5 6 7 Relay, 8 Motion PIR, 9 Light Sensor, 10 Motion Microwave, SD Card 4 11 12 13*/
+/* Pins Used: A0 Buttons, A1-A5 LEDs, 2 Humidity/Temp Sensor, 5 6 7 Relay, 8 Motion PIR, 9 Light Sensor, 10 Microwave Motion Detector, SD Card 4 11 12 13*/
  
-//#define SDcardActive // Enable SD CARD HERE // SDcardActive or else write  SDcardNOTActive     
+//#define SDcardActive // Enable SD CARD HERE // SDcardActive or else write  SDcardNOTActive  // comment out the line below
 #undef SDcardActive //Disable SD card
 
 #ifdef SDcardActive 
@@ -73,20 +73,20 @@
 /*End Relay*/
 /*Start Fan Auto */
   boolean fanAuto = 0; //Check if Fan Auto Mode is on or off (on= 1=true , off= 0=false)
-  boolean fanAutoRememberState = 0;
-  
+  boolean fanAutoRememberState = 0;  
 /*End Fan Auto */
 /*Start Motion Detection PIR*/
   #define motionDetectionPIRPin 8 //on what Pin the PIR Sensor is
   boolean motionDetectionState = 0;
   boolean motionActive = 0;
-  unsigned long motionDetectionTimer = 300000; //Timer before Light is turned off 300000 ms = 5 Minutes // 60000 ms = 1 Minute
+  const unsigned long standardMotionDetectionTimer = 300000;  //300000 ms = 5 Minutes // 60000 ms = 1 Minute
+  unsigned long motionDetectionTimer = standardMotionDetectionTimer; //Time before Light is turned off 
   unsigned long lastMotionDetectedTime = 0;
   unsigned long lastTimeLightTurnedOffManually=0;
   int deactivateMotionDetection=0;
   const unsigned int deactivateMotionDetectionTimer=5000; // 5000 ms = 5 seconds;
 /*End Motion Detection*/
-/*Start Motion Detection Microwave*/
+/*Start Microwave Motion Detection */
 	#define motionDetectionMicrowavePin 10
 /*End Motion Detection*/
 /*Start 3 Way Light Switch*/
@@ -100,8 +100,7 @@
   boolean buttonFanState  = 0; //state of the Fan Button
   boolean buttonFanAutoOnOffBasedOnHumidity = 0; //state of the Fan1 Button
   boolean buttonFan2State = 0; //state of the Fan1 Button
-  boolean buttonForMotionDetection = 0; //state of the Light Button 
-	 
+  boolean buttonForMotionDetection = 0; //state of the Light Button 	 
 /*End Buttons*/
 /*Start LED*/
   #define LEDFanPin A1 //define on what pin the LED Fan is
@@ -472,10 +471,10 @@ void motionDetection(){
 		Serial.println(); 
 	#endif  
   }
-  if(!digitalRead(relayFanPin)){ //if the fan is running, make the delay 15 Minutes, else 5 Minutes //relayFan LOW = ON
+  if(!digitalRead(relayFanPin)){ //if the fan is running, make the delay 15 Minutes, else standardMotionDetectionTimer //relayFan LOW = ON
     motionDetectionTimer= 900000; // 900000 ms = 15 Minutes
   } else{
-    motionDetectionTimer= 300000; // 300000 ms = 5 Minutes
+    motionDetectionTimer= standardMotionDetectionTimer;  
   }
 
   if(millis()-lastMotionDetectedTime > motionDetectionTimer && motionActive){
