@@ -105,7 +105,7 @@ void loop() {
     previousMillis = now;
 
     if (temperature != -1 && humidity != -1 ) {
-      Serial.println(String("temperature: \t\t") +  temperature + String(" humidity: \t\t") + humidity) ;
+      Serial.println(String("temperature: \t\t") +  temperature + String(" humidity: \t\t\t") + humidity) ;
       Serial.println(String("lastTemperatureReading \t") + lastTemperatureReading + String(" lastHumiditiyReading: \t" ) +  lastHumiditiyReading);
       if
       (

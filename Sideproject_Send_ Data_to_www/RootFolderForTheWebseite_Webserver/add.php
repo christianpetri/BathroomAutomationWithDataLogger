@@ -16,9 +16,11 @@ if (isset($_POST["secret"])) {
 
 // for sendPostToWWW_Wifi_Wemos_D1_SHT30
 if (isset($_POST["temperature"]) && isset($_POST["humidity"]) && isset($_POST["secret"])) {
-    #echo "Temperature in Celsius: " . htmlspecialchars($_POST["temperature"]) . " Humidity in %: " . htmlspecialchars($_POST["humidity"]) . "\n";
     if ($_POST["secret"] == "1234567890") {
+        #echo "Temperature in Celsius: " . htmlspecialchars($_POST["temperature"]) . " Humidity in %: " . htmlspecialchars($_POST["humidity"]) . "\n";
         $DB->pushUpdate($date->format('Y-m-d H:i:s'), $_POST["temperature"], $_POST["humidity"]);
+    } else {
+        http_response_code(400);
     }
 } else {
     http_response_code(400);
