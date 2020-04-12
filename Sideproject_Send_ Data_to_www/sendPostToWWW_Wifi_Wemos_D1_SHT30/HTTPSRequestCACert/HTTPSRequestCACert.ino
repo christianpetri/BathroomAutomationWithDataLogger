@@ -32,6 +32,7 @@ extern const unsigned int caCertLen;
 
 extern const char*  ssid;
 extern const char* password ;
+extern const String secret;
 
 WiFiClientSecure client;
 
@@ -115,10 +116,9 @@ void loop() {
       {
         Serial.println("No Changes");
         counter++;
-        if(counter >= 300){
+        if (counter >= 300) {
           counter = 0;
-          String content = "temperature=" + String(readTemperature()) + "&humidity=" + String(readHumidity()); 
-          sendPOSTrequest("/add.php", httpsPort, content);
+          sendContentToTheServer(temperature, humidity);
         }
       }
       else
@@ -126,8 +126,7 @@ void loop() {
         if (0 <= humidity <= 100 && 0 <= temperature <= 65)
         {
           Serial.println("Changes");
-          String content = "temperature=" + String(readTemperature()) + "&humidity=" + String(readHumidity());
-          sendPOSTrequest("/add.php", httpsPort, content);
+          sendContentToTheServer(temperature, humidity);
           lastTemperatureReading = temperature;
           lastHumiditiyReading = humidity;
         }
@@ -136,6 +135,11 @@ void loop() {
       Serial.println("Error: Please check the sensor");
     }
   }
+}
+
+void sendContentToTheServer(int temperature, int humidity ) {
+  String content = "temperature=" + String(temperature) + "&humidity=" + String(humidity)+ "&secret=" + String(secret);
+  sendPOSTrequest("/add.php", httpsPort, content);
 }
 
 void sendPOSTrequest(String url, int httpsPort, String content) {
