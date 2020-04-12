@@ -1,5 +1,6 @@
 <?php
 include("connect.php");
+$DB = new HandelDB;
 date_default_timezone_set("Europe/Paris"); 
 $date = new DateTime();
    

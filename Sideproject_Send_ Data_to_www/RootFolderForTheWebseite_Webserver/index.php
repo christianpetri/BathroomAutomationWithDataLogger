@@ -1,6 +1,7 @@
 <?php
  	 date_default_timezone_set('Europe/London');
     include("connect.php");
+    $DB = new HandelDB;
     $result = $DB->getResults("SELECT * FROM `tempLog` WHERE `timeStamp` >= (now() - INTERVAL 1 DAY) ORDER BY `timeStamp` DESC LIMIT 2000");
    //echo print_r($result);
 ?>
