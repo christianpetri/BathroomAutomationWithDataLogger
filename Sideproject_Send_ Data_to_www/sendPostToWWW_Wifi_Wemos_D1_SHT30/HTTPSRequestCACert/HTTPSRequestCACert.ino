@@ -105,7 +105,7 @@ void loop() {
     previousMillis = now;
 
     if (temperature != -1 && humidity != -1 ) {
-      Serial.println(String("temperature: \t\t") +  temperature + String(" humidity: \t\t\t") + humidity) ;
+      Serial.println(String("temperature: \t\t") +  temperature + String(" humidity: \t\t") + humidity) ;
       Serial.println(String("lastTemperatureReading \t") + lastTemperatureReading + String(" lastHumiditiyReading: \t" ) +  lastHumiditiyReading);
       if
       (
@@ -116,7 +116,7 @@ void loop() {
       {
         Serial.println("No Changes");
         counter++;
-        if (counter >= 300) {
+        if (counter >= 600) {
           counter = 0;
           sendContentToTheServer(temperature, humidity);
         }
@@ -126,6 +126,7 @@ void loop() {
         if (0 <= humidity <= 100 && 0 <= temperature <= 65)
         {
           Serial.println("Changes");
+          counter = 0;
           sendContentToTheServer(temperature, humidity);
           lastTemperatureReading = temperature;
           lastHumiditiyReading = humidity;
@@ -138,7 +139,7 @@ void loop() {
 }
 
 void sendContentToTheServer(int temperature, int humidity ) {
-  String content = "temperature=" + String(temperature) + "&humidity=" + String(humidity)+ "&secret=" + String(secret);
+  String content = "temperature=" + String(temperature) + "&humidity=" + String(humidity) + "&secret=" + String(secret);
   sendPOSTrequest("/add.php", httpsPort, content);
 }
 
@@ -186,20 +187,19 @@ void sendPOSTrequest(String url, int httpsPort, String content) {
   if (strcmp(status, "HTTP/1.1 200 OK") != 0) {
     Serial.print(F("Unexpected response: "));
     Serial.println(status);
-    return;
+    while (client.connected()) {
+      String line = client.readStringUntil('\n');
+      Serial.println(line);
+    }
   }
 
-  // Skip HTTP headers
-  char endOfHeaders[] = "\r\n\r\n";
-  if (!client.find(endOfHeaders)) {
-    Serial.println(F("Invalid response"));
-    return;
-  }
-  Serial.println("Sucess");
   /*
-    while (client.connected()) {
-    String line = client.readStringUntil('\n');
-    Serial.println(line);
+    // Skip HTTP headers
+    char endOfHeaders[] = "\r\n\r\n";
+    if (!client.find(endOfHeaders)) {
+      Serial.println(F("Invalid response"));
+      client.stop();
+      return;
     }
   */
   client.stop();
