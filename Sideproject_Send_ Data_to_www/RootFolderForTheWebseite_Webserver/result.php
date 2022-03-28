@@ -2,7 +2,13 @@
 date_default_timezone_set('Europe/London');
 include("connect.php");
 $DB = new HandelDB;
-$result = $DB->getResults("SELECT * FROM `tempLog` ORDER BY `timeStamp` DESC");
+//$result = $DB->getResults("SELECT * FROM `tempLog` ORDER BY `timeStamp` DESC LIMIT 100");
+if (!isset($_GET["year"])) {
+    $year = (string)date("Y");
+} else {
+    $year = (string)htmlspecialchars($_GET["year"]);
+} 
+$result = $DB->getResults("SELECT * FROM `tempLog` WHERE EXTRACT(year FROM timeStamp) = {$year}");
 //echo print_r($result);
 ?>
 
@@ -46,6 +52,17 @@ $result = $DB->getResults("SELECT * FROM `tempLog` ORDER BY `timeStamp` DESC");
 <body>
     <h1>Temperature / Humidity sensor readings</h1>
     <a href="/">Live data</a>
+    <p>Year: 
+ 
+    <?php  
+    $resultYear = $DB->getResults("SELECT EXTRACT(year FROM timeStamp)as year FROM `tempLog` GROUP BY EXTRACT(year FROM timeStamp) ORDER by year");
+
+    foreach ($resultYear as $key => $value) {  
+        $x=htmlspecialchars($resultYear[$key]['year']);
+        echo '<a href="/result.php?year='.$x.'">'.$x.'</a> ';
+    } 
+    ?>
+    </p>
     <p>You can pan (right click and hold) and zoom (mouse-wheel) with your mouse</p>
     <?php
 
@@ -142,20 +159,26 @@ $result = $DB->getResults("SELECT * FROM `tempLog` ORDER BY `timeStamp` DESC");
     </br>
     <?php
 
-    $result = $DB->getResults("SELECT * FROM `tempLog` ORDER BY `timeStamp` DESC LIMIT 10");
+    //$result = $DB->getResults("SELECT * FROM `tempLog` ORDER BY `timeStamp` DESC LIMIT 10");
+    //$result = $DB->getResults("SELECT * FROM `tempLog` WHERE EXTRACT(year FROM timeStamp) = {$year} Limit 15");
+    
+    $result = $DB->getResults("SELECT date_format(timestamp, '%Y-%m') as 'year-month', TRUNCATE(avg(HUMIDITY),0) AS avgHum, TRUNCATE(avg(TEMPERATURE),0) as avgTemp FROM `tempLog` WHERE EXTRACT(year FROM timeStamp) = {$year} GROUP BY EXTRACT(YEAR_MONTH FROM timeStamp) ORDER by timeStamp;");
+    //echo print_r($result);
+    //print_r(array_keys($result));
+    //$arrayKeys= array_keys($result);  
     $html = "";
     $html = '<table class="result">';
     // header row
     $html .= '<tr>';
-    $html .= '<th> timeStamp </th> <th> temperature </th> <th> humidity </th>';
+    $html .= '<th> year-month </th> <th> avgTemp </th> <th> avgHum </th>';
     $html .= '</tr>';
 
     // data rows
     foreach ($result as $key => $value) {
         $html .= '<tr>';
-        $html .= '<td>' . htmlspecialchars($result[$key]['timeStamp']) . '</td>';
-        $html .= '<td>' . htmlspecialchars($result[$key]['temperature']) . '</td>';
-        $html .= '<td>' . htmlspecialchars($result[$key]['humidity']) . '</td>';
+        $html .= '<td>' . htmlspecialchars($result[$key]['year-month']) . '</td>';
+        $html .= '<td>' . htmlspecialchars($result[$key]['avgTemp']) . '</td>';
+        $html .= '<td>' . htmlspecialchars($result[$key]['avgHum']) . '</td>';
         $html .= '</tr>';
     }
 
